@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onevima - Online Video Editor</title>
+    <!-- Подключаем скрипт для исправления заголовков GitHub Pages (обязательно!) -->
+    <script src="coi-serviceworker.js"></script>
+    <!-- Подключаем библиотеку FFmpeg -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #3b82f6;
+            --text-color: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: var(--surface-color);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        h1 { margin-bottom: 5px; letter-spacing: 1px; }
+        .subtitle { color: #aaa; margin-bottom: 20px; font-size: 0.9em; }
+        
+        /* Видеоплеер */
+        video {
+            width: 100%;
+            max-height: 400px;
+            background: #000;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        /* Элементы управления */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        input[type="file"] { display: none; }
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background-color: #555; cursor: not-allowed; }
+        .btn-upload { background-color: #444; }
+
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            display: none; /* Скрыто пока нет видео */
+        }
+        input[type="number"] {
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            width: 80px;
+        }
+
+        #logs {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: left;
+            height: 100px;
+            overflow-y: scroll;
+            font-size: 12px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .loader {
+            display: none;
+            margin: 10px auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Onevima Web</h1>
+        <div class="subtitle">Редактор видео прямо в браузере</div>
+
+        <label class="btn btn-upload">
+            📂 Выбрать видео
+            <input type="file" id="uploader">
+        </label>
+
+        <video id="player" controls></video>
+
+        <div class="time-inputs" id="timeBox">
+            <label>Start (сек): <input type="number" id="startTime" value="0"></label>
+            <label>End (сек): <input type="number" id="endTime" value="10"></label>
+        </div>
+
+        <div class="controls">
+            <button id="trimBtn" class="btn" disabled>✂️ Обрезать и Скачать</button>
+        </div>
+
+        <div class="loader" id="loader"></div>
+        <div id="logs"></div>
+        <div id="outputLink"></div>
+    </div>
+
+    <script>
+        const { createFFmpeg, fetchFile } = FFmpeg;
+        // Создаем экземпляр FFmpeg. Log: true показывает процесс в консоли
+        const ffmpeg = createFFmpeg({ log: true });
+
+        const uploader = document.getElementById('uploader');
+        const player = document.getElementById('player');
+        const trimBtn = document.getElementById('trimBtn');
+        const timeBox = document.getElementById('timeBox');
+        const logs = document.getElementById('logs');
+        const loader = document.getElementById('loader');
+
+        // Инициализация FFmpeg
+        const loadFFmpeg = async () => {
+            log("Загрузка ядра FFmpeg (это может занять время)...");
+            try {
+                await ffmpeg.load();
+                log("Onevima готова к работе!");
+            } catch (e) {
+                log("Ошибка загрузки: Возможно, браузер не поддерживает SharedArrayBuffer. Проверьте coi-serviceworker.");
+            }
+        };
+
+        // Загрузка при старте страницы
+        loadFFmpeg();
+
+        uploader.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                player.src = URL.createObjectURL(file);
+                player.style.display = 'block';
+                timeBox.style.display = 'flex';
+                trimBtn.disabled = false;
+                logs.style.display = 'block';
+                log(`Загружен файл: ${file.name}`);
+            }
+        });
+
+        trimBtn.addEventListener('click', async () => {
+            const file = uploader.files[0];
+            if (!file) return;
+
+            trimBtn.disabled = true;
+            loader.style.display = 'block';
+            
+            const start = document.getElementById('startTime').value;
+            const end = document.getElementById('endTime').value;
+            const duration = end - start;
+
+            const name = file.name;
+            const outputName = 'onevima_edit.mp4';
+
+            log("Начинаю обработку... Не закрывайте вкладку.");
+
+            // 1. Загружаем файл в виртуальную файловую систему FFmpeg
+            ffmpeg.FS('writeFile', name, await fetchFile(file));
+
+            // 2. Запускаем команду (быстрая обрезка без перекодирования -c copy)
+            // Если видео глючит, уберите '-c', 'copy' (будет медленнее, но точнее)
+            await ffmpeg.run('-i', name, '-ss', start, '-t', duration.toString(), '-c', 'copy', outputName);
+
+            // 3. Читаем результат
+            const data = ffmpeg.FS('readFile', outputName);
+
+            // 4. Создаем ссылку на скачивание
+            const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+            
+            // Автоматическое скачивание
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = outputName;
+            document.body.appendChild(a);
+            a.click();
+            
+            log("Готово! Скачивание началось.");
+            loader.style.display = 'none';
+            trimBtn.disabled = false;
+            
+            // Очистка памяти
+            ffmpeg.FS('unlink', name);
+            ffmpeg.FS('unlink', outputName);
+        });
+
+        function log(message) {
+            logs.innerHTML += `> ${message}<br>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+    </script>
+</body>
+</html>
