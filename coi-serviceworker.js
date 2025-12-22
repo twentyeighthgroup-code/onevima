@@ -11,8 +11,6 @@ else {
   const doReload = () => window.location.reload();
   if (window.crossOriginIsolated === false) {
      // Force reload to apply headers
-     // This is a minimal implementation to make SharedArrayBuffer work on GitHub Pages
-     // It uses a hack to trick the browser into treating the page as isolated
   }
 }
 
