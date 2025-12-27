@@ -3,476 +3,528 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onevima 1.2 Studio</title>
+    <title>Onevima 1.3 - Studio</title>
     <script src="coi-serviceworker.js"></script>
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #111827;
-            --panel-bg: #1f2937;
-            --accent: #8b5cf6; /* Violet */
-            --accent-hover: #7c3aed;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --border: #374151;
+            --bg: #18181b; /* Zinc 900 */
+            --sidebar: #27272a; /* Zinc 800 */
+            --active: #3f3f46;
+            --accent: #06b6d4; /* Cyan 500 */
+            --accent-hover: #0891b2;
+            --text: #f4f4f5;
+            --text-dim: #a1a1aa;
         }
 
-        * { box-sizing: border-box; outline: none; }
+        * { box-sizing: border-box; user-select: none; }
+        
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             margin: 0;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 80px;
+            background: var(--sidebar);
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+            padding-top: 20px;
+            border-right: 1px solid #333;
+            z-index: 10;
         }
 
-        /* --- Header --- */
-        header {
-            width: 100%;
-            background: var(--panel-bg);
-            padding: 15px 0;
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        h1 { margin: 0; font-size: 1.5rem; letter-spacing: 1px; color: var(--accent); }
-        h1 span { color: white; }
-
-        /* --- Main Layout --- */
-        .main-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            width: 95%;
-            max-width: 1200px;
-            margin-top: 30px;
-            margin-bottom: 50px;
-        }
-
-        /* --- Video Section (Left) --- */
-        .preview-section {
-            flex: 2;
-            min-width: 300px;
-            background: var(--panel-bg);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-        
-        .upload-box {
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 40px;
-            cursor: pointer;
-            transition: 0.3s;
+        .nav-item {
+            width: 50px;
+            height: 50px;
             margin-bottom: 20px;
-        }
-        .upload-box:hover { border-color: var(--accent); background: rgba(139, 92, 246, 0.1); }
-        .upload-icon { font-size: 40px; margin-bottom: 10px; display: block; }
-        input[type="file"] { display: none; }
-
-        video {
-            width: 100%;
-            max-height: 500px;
-            background: #000;
-            border-radius: 8px;
-            display: none;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-        }
-
-        /* --- Tools Section (Right) --- */
-        .tools-section {
-            flex: 1;
-            min-width: 300px;
-            background: var(--panel-bg);
-            padding: 25px;
             border-radius: 12px;
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            height: fit-content;
-        }
-        .disabled-overlay {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
-        .tool-group {
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 15px;
-        }
-        .tool-group:last-child { border-bottom: none; }
-        
-        .tool-title {
-            font-weight: 500;
-            margin-bottom: 10px;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Inputs */
-        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .input-full { width: 100%; }
-        
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
-        
-        input, select {
-            background: #374151;
-            border: 1px solid #4b5563;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            width: 100%;
-        }
-        input:focus, select:focus { border-color: var(--accent); }
-
-        /* Range Slider */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 16px; width: 16px;
-            border-radius: 50%;
-            background: var(--accent);
-            cursor: pointer;
-            margin-top: -6px;
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px;
-            cursor: pointer; background: #4b5563;
-            border-radius: 2px;
-        }
-
-        /* Buttons */
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.2s;
-            font-size: 1rem;
             display: flex;
             justify-content: center;
             align-items: center;
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav-item:hover { background: var(--active); color: white; }
+        .nav-item.active { background: var(--accent); color: white; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+
+        /* --- Main Content --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            height: 60px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+        }
+        .brand { font-weight: 700; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .brand span { color: var(--accent); }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Preview Area */
+        .preview {
+            flex: 2;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        video { max-width: 90%; max-height: 80%; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        
+        .placeholder {
+            text-align: center;
+            color: var(--text-dim);
+            cursor: pointer;
+        }
+        .placeholder i { font-size: 3rem; margin-bottom: 10px; display: block; }
+
+        /* Properties Panel */
+        .properties {
+            width: 320px;
+            background: #202023;
+            border-left: 1px solid #333;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .panel-section { display: none; animation: fadeIn 0.3s; }
+        .panel-section.active { display: block; }
+
+        h3 { font-size: 0.9rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+        /* Controls */
+        .control-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.85rem; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #444;
+            border-radius: 2px;
+            appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px; height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="file"] { display: none; }
+        
+        .btn-upload-music {
+            width: 100%;
+            padding: 10px;
+            background: #333;
+            border: 1px dashed #555;
+            color: var(--text-dim);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .btn-upload-music:hover { background: #444; color: white; }
+
+        .btn-export {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
-        .btn-primary:hover { background: var(--accent-hover); }
-        .btn-primary:disabled { background: #4b5563; cursor: not-allowed; }
+        .btn-export:hover { background: var(--accent-hover); transform: scale(1.05); }
+        .btn-export:disabled { background: #444; transform: none; cursor: wait; }
 
-        /* Logs & Spinner */
-        #logs {
-            font-family: monospace;
-            font-size: 12px;
-            color: #10b981;
-            background: #000;
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: #2a2a2d;
             padding: 10px;
             border-radius: 6px;
-            height: 100px;
+        }
+        input[type="checkbox"] { accent-color: var(--accent); transform: scale(1.2); }
+
+        /* Logs console */
+        .console-log {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 150px;
+            background: rgba(0,0,0,0.9);
+            color: #0f0;
+            font-family: monospace;
+            padding: 10px;
+            font-size: 0.8rem;
             overflow-y: scroll;
-            margin-top: 15px;
             display: none;
+            z-index: 100;
         }
 
-        .spinner {
-            width: 20px; height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: none;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Onevima <span>1.2</span></h1>
-    </header>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="nav-item active" onclick="switchTab('edit', this)"><i class="fas fa-scissors"></i></div>
+        <div class="nav-item" onclick="switchTab('color', this)"><i class="fas fa-palette"></i></div>
+        <div class="nav-item" onclick="switchTab('audio', this)"><i class="fas fa-music"></i></div>
+        <div class="nav-item" onclick="switchTab('fx', this)"><i class="fas fa-magic"></i></div>
+    </div>
 
-    <div class="main-container">
-        
-        <!-- Left: Preview -->
-        <div class="preview-section">
-            <div class="upload-box" id="dropArea" onclick="document.getElementById('fileInput').click()">
-                <span class="upload-icon">📂</span>
-                <div>Нажмите или перетащите видео сюда</div>
-                <div style="font-size: 0.8em; color: gray; margin-top: 5px;">MP4, MOV, MKV, AVI</div>
-                <input type="file" id="fileInput" accept="video/*">
-            </div>
-            
-            <video id="videoPlayer" controls></video>
-            <div id="logs"></div>
-        </div>
-
-        <!-- Right: Tools -->
-        <div class="tools-section disabled-overlay" id="toolsPanel">
-            
-            <!-- 1. Trimming -->
-            <div class="tool-group">
-                <div class="tool-title">✂️ Обрезка (Тайминг)</div>
-                <div class="input-row">
-                    <div>
-                        <label>Начало (сек)</label>
-                        <input type="number" id="trimStart" value="0" step="0.1">
-                    </div>
-                    <div>
-                        <label>Конец (сек)</label>
-                        <input type="number" id="trimEnd" value="10" step="0.1">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. Format & Resolution -->
-            <div class="tool-group">
-                <div class="tool-title">⚙️ Разрешение и Формат</div>
-                <div class="input-row">
-                    <div class="input-full">
-                        <label>Размер кадра</label>
-                        <select id="resolution">
-                            <option value="original">Как в оригинале</option>
-                            <option value="scale=-2:1080">Full HD (1080p)</option>
-                            <option value="scale=-2:720">HD (720p)</option>
-                            <option value="scale=-2:480">SD (480p - Эконом)</option>
-                            <option value="scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:-1:-1:color=black">TikTok / Reels (9:16)</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="input-row">
-                     <div class="input-full">
-                        <label>Формат вывода</label>
-                        <select id="format">
-                            <option value="mp4">MP4 (Стандарт)</option>
-                            <option value="webm">WebM (Для веба)</option>
-                            <option value="gif">GIF (Анимация)</option>
-                            <option value="mp3">MP3 (Только аудио)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Transform -->
-            <div class="tool-group">
-                <div class="tool-title">🔄 Трансформация</div>
-                <div class="input-row">
-                    <div class="input-full">
-                        <label>Поворот</label>
-                        <select id="rotation">
-                            <option value="0">Нет</option>
-                            <option value="transpose=1">90° по часовой</option>
-                            <option value="transpose=2">90° против часовой</option>
-                            <option value="transpose=2,transpose=2">180° (Перевернуть)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Speed & Volume -->
-            <div class="tool-group">
-                <div class="tool-title">🔊 Скорость и Звук</div>
-                <div class="input-row">
-                    <div class="input-full">
-                        <label>Скорость видео: <span id="speedVal">1x</span></label>
-                        <input type="range" id="speed" min="0.5" max="2.0" step="0.25" value="1">
-                    </div>
-                </div>
-                <div class="input-row">
-                    <div class="input-full">
-                        <label>Громкость: <span id="volVal">100%</span></label>
-                        <input type="range" id="volume" min="0" max="2.0" step="0.1" value="1">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action -->
-            <button id="renderBtn" class="btn-primary">
-                <div class="spinner" id="spinner"></div>
-                <span id="btnText">Экспорт видео</span>
+    <!-- Workspace -->
+    <div class="workspace">
+        <header class="header">
+            <div class="brand">Onevima <span>Studio</span></div>
+            <button class="btn-export" id="exportBtn" onclick="processVideo()">
+                <i class="fas fa-download"></i> <span id="btnText">Экспорт</span>
             </button>
+        </header>
 
+        <div class="content-area">
+            <!-- Video Preview -->
+            <div class="preview">
+                <div class="placeholder" id="uploadPlaceholder" onclick="document.getElementById('videoInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <div>Загрузить видео</div>
+                </div>
+                <video id="mainVideo" controls style="display:none;"></video>
+                <input type="file" id="videoInput" accept="video/*">
+                <div class="console-log" id="logs"></div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div class="properties">
+                
+                <!-- Tab: Edit -->
+                <div id="edit" class="panel-section active">
+                    <h3>Базовое редактирование</h3>
+                    <div class="control-group">
+                        <label>Обрезка: Начало (сек)</label>
+                        <input type="number" id="trimStart" value="0" style="width:100%; padding:5px; background:#333; border:none; color:white;">
+                    </div>
+                    <div class="control-group">
+                        <label>Обрезка: Конец (сек)</label>
+                        <input type="number" id="trimEnd" value="10" style="width:100%; padding:5px; background:#333; border:none; color:white;">
+                    </div>
+                    <div class="control-group">
+                        <label>Размер (Формат)</label>
+                        <select id="aspectRatio" style="width:100%; padding:8px; background:#333; border:none; color:white;">
+                            <option value="orig">Оригинал</option>
+                            <option value="9:16">TikTok / Reels (9:16)</option>
+                            <option value="16:9">YouTube (16:9)</option>
+                            <option value="1:1">Instagram (1:1)</option>
+                        </select>
+                    </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="reverseVideo">
+                        <label for="reverseVideo" style="margin:0">Реверс (Обратная перемотка)</label>
+                    </div>
+                </div>
+
+                <!-- Tab: Color -->
+                <div id="color" class="panel-section">
+                    <h3>Цветокоррекция</h3>
+                    <div class="control-group">
+                        <label>Яркость <span>0</span></label>
+                        <input type="range" id="brightness" min="-1" max="1" step="0.1" value="0" oninput="updateLabel(this)">
+                    </div>
+                    <div class="control-group">
+                        <label>Контраст <span>1</span></label>
+                        <input type="range" id="contrast" min="-2" max="2" step="0.1" value="1" oninput="updateLabel(this)">
+                    </div>
+                    <div class="control-group">
+                        <label>Насыщенность <span>1</span></label>
+                        <input type="range" id="saturation" min="0" max="3" step="0.1" value="1" oninput="updateLabel(this)">
+                    </div>
+                    <div class="control-group">
+                        <label>Гамма <span>1</span></label>
+                        <input type="range" id="gamma" min="0.1" max="5" step="0.1" value="1" oninput="updateLabel(this)">
+                    </div>
+                </div>
+
+                <!-- Tab: Audio -->
+                <div id="audio" class="panel-section">
+                    <h3>Аудио Микшер</h3>
+                    <div class="control-group">
+                        <label>Громкость видео</label>
+                        <input type="range" id="volVideo" min="0" max="2" step="0.1" value="1">
+                    </div>
+                    <div class="control-group">
+                        <div class="btn-upload-music" onclick="document.getElementById('musicInput').click()">
+                            <i class="fas fa-music"></i> <span id="musicName">Добавить музыку (MP3)</span>
+                        </div>
+                        <input type="file" id="musicInput" accept="audio/*">
+                    </div>
+                    <div class="control-group">
+                        <label>Громкость музыки</label>
+                        <input type="range" id="volMusic" min="0" max="2" step="0.1" value="1">
+                    </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="musicLoop">
+                        <label for="musicLoop" style="margin:0">Зациклить музыку</label>
+                    </div>
+                </div>
+
+                <!-- Tab: FX -->
+                <div id="fx" class="panel-section">
+                    <h3>Спецэффекты</h3>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="fadeInOut">
+                        <label for="fadeInOut" style="margin:0">Fade In / Fade Out (Затухание)</label>
+                    </div>
+                    
+                    <h3>Хромакей (Green Screen)</h3>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="chromakey">
+                        <label for="chromakey" style="margin:0">Удалить зеленый фон</label>
+                    </div>
+                    <div class="control-group">
+                        <label>Чувствительность</label>
+                        <input type="range" id="chromaSim" min="0.01" max="0.5" step="0.01" value="0.1">
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
     <script>
         const { createFFmpeg, fetchFile } = FFmpeg;
         const ffmpeg = createFFmpeg({ log: true });
+        let videoFile = null;
+        let musicFile = null;
 
-        // DOM Elements
-        const fileInput = document.getElementById('fileInput');
-        const videoPlayer = document.getElementById('videoPlayer');
-        const toolsPanel = document.getElementById('toolsPanel');
-        const dropArea = document.getElementById('dropArea');
-        const renderBtn = document.getElementById('renderBtn');
-        const logs = document.getElementById('logs');
-        
-        // Inputs
-        const trimStart = document.getElementById('trimStart');
-        const trimEnd = document.getElementById('trimEnd');
-        const resolution = document.getElementById('resolution');
-        const formatSelect = document.getElementById('format');
-        const rotation = document.getElementById('rotation');
-        const speed = document.getElementById('speed');
-        const volume = document.getElementById('volume');
-
-        // Labels
-        const speedVal = document.getElementById('speedVal');
-        const volVal = document.getElementById('volVal');
-
-        let loadedFile = null;
-
-        // --- Init FFmpeg ---
-        const init = async () => {
-            if(!ffmpeg.isLoaded()) await ffmpeg.load();
-            console.log("Onevima Engine Loaded");
-        };
-        init();
-
-        // --- Event Listeners ---
-        speed.addEventListener('input', (e) => speedVal.innerText = e.target.value + 'x');
-        volume.addEventListener('input', (e) => volVal.innerText = Math.round(e.target.value * 100) + '%');
-
-        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-
-        dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.style.borderColor = '#8b5cf6'; });
-        dropArea.addEventListener('dragleave', (e) => { dropArea.style.borderColor = '#374151'; });
-        dropArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropArea.style.borderColor = '#374151';
-            handleFile(e.dataTransfer.files[0]);
-        });
-
-        function handleFile(file) {
-            if (!file || !file.type.startsWith('video/')) return;
-            loadedFile = file;
-            videoPlayer.src = URL.createObjectURL(file);
-            videoPlayer.style.display = 'block';
-            dropArea.style.display = 'none';
-            toolsPanel.classList.remove('disabled-overlay');
-            logs.style.display = 'block';
-            log(`Файл загружен: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`);
-
-            videoPlayer.onloadedmetadata = () => {
-                trimEnd.value = videoPlayer.duration;
-            };
+        // UI Logic
+        function switchTab(id, el) {
+            document.querySelectorAll('.panel-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
         }
 
-        // --- Core Logic ---
-        renderBtn.addEventListener('click', async () => {
-            if (!loadedFile) return;
-            
-            setLoading(true);
+        function updateLabel(input) {
+            input.parentElement.querySelector('span').innerText = input.value;
+        }
 
-            const ext = formatSelect.value;
-            const inputName = 'input_video';
-            const outputName = `onevima_export.${ext}`;
-
-            // Загрузка файла в память
-            ffmpeg.FS('writeFile', inputName, await fetchFile(loadedFile));
-
-            // Формируем фильтры
-            let videoFilters = [];
-            let audioFilters = [];
-
-            // 1. Resolution / Crop
-            if (resolution.value !== 'original') videoFilters.push(resolution.value);
-
-            // 2. Rotation
-            if (rotation.value !== '0') videoFilters.push(rotation.value);
-
-            // 3. Speed (Video PTS)
-            const speedValue = parseFloat(speed.value);
-            if (speedValue !== 1) {
-                // setpts = 1/speed * PTS
-                videoFilters.push(`setpts=${1/speedValue}*PTS`);
-                audioFilters.push(`atempo=${speedValue}`); // Аудио должно совпадать
-            }
-
-            // 4. Volume
-            const volValue = parseFloat(volume.value);
-            if (volValue !== 1) audioFilters.push(`volume=${volValue}`);
-
-            // Сборка команды
-            let args = ['-i', inputName];
-
-            // Обрезка (быстрая, до фильтров)
-            args.push('-ss', trimStart.value);
-            args.push('-t', (trimEnd.value - trimStart.value).toString());
-
-            // Применяем фильтры
-            if (ext === 'mp3') {
-                // Только аудио
-                if (audioFilters.length > 0) args.push('-af', audioFilters.join(','));
-                args.push('-vn'); // Без видео
-            } else if (ext === 'gif') {
-                // GIF Specific
-                videoFilters.push('fps=10,scale=320:-1:flags=lanczos');
-                args.push('-vf', videoFilters.join(','));
-            } else {
-                // Видео (MP4/WebM)
-                if (videoFilters.length > 0) args.push('-vf', videoFilters.join(','));
-                if (audioFilters.length > 0) args.push('-af', audioFilters.join(','));
+        // File Handling
+        document.getElementById('videoInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                videoFile = file;
+                const url = URL.createObjectURL(file);
+                const vid = document.getElementById('mainVideo');
+                vid.src = url;
+                vid.style.display = 'block';
+                document.getElementById('uploadPlaceholder').style.display = 'none';
                 
-                // Кодеки
-                args.push('-c:v', ext === 'webm' ? 'libvpx-vp9' : 'libx264');
-                if (ext !== 'webm') args.push('-preset', 'ultrafast'); // Скорость важнее сжатия в браузере
+                vid.onloadedmetadata = () => {
+                    document.getElementById('trimEnd').value = Math.floor(vid.duration);
+                };
+            }
+        });
+
+        document.getElementById('musicInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                musicFile = file;
+                document.getElementById('musicName').innerText = file.name.substring(0, 20) + '...';
+            }
+        });
+
+        function log(msg) {
+            const l = document.getElementById('logs');
+            l.style.display = 'block';
+            l.innerHTML += `> ${msg}<br>`;
+            l.scrollTop = l.scrollHeight;
+        }
+
+        // --- THE ENGINE ---
+        async function processVideo() {
+            if(!videoFile) return alert("Сначала загрузите видео!");
+            
+            const btn = document.getElementById('exportBtn');
+            btn.disabled = true;
+            document.getElementById('btnText').innerText = "Рендеринг...";
+
+            if(!ffmpeg.isLoaded()) await ffmpeg.load();
+
+            const inputName = 'input.mp4';
+            const outputName = 'output.mp4';
+            ffmpeg.FS('writeFile', inputName, await fetchFile(videoFile));
+
+            let inputs = ['-i', inputName];
+            let filterComplex = [];
+            let outputMaps = ['-map', '[v_out]', '-map', '[a_out]']; // Default map targets
+
+            // 1. TRIM (Basic cut)
+            const start = document.getElementById('trimStart').value;
+            const end = document.getElementById('trimEnd').value;
+            const duration = end - start;
+            
+            // We use standard input args for trim for speed, unless filters force re-encode
+            inputs.push('-ss', start);
+            inputs.push('-t', duration);
+
+            // 2. VIDEO CHAIN
+            let vChain = '[0:v]'; // Start with input video stream
+
+            // -- Reverse --
+            if(document.getElementById('reverseVideo').checked) {
+                filterComplex.push(`${vChain}reverse[v_rev]`);
+                vChain = '[v_rev]';
             }
 
-            args.push(outputName);
+            // -- Color Grading --
+            const br = document.getElementById('brightness').value;
+            const co = document.getElementById('contrast').value;
+            const sat = document.getElementById('saturation').value;
+            const gm = document.getElementById('gamma').value;
+            
+            if(br != 0 || co != 1 || sat != 1 || gm != 1) {
+                filterComplex.push(`${vChain}eq=brightness=${br}:contrast=${co}:saturation=${sat}:gamma=${gm}[v_col]`);
+                vChain = '[v_col]';
+            }
 
-            log("Начинаю обработку... Пожалуйста, ждите.");
-            log(`Команда: ffmpeg ${args.join(' ')}`);
+            // -- Chromakey --
+            if(document.getElementById('chromakey').checked) {
+                const sim = document.getElementById('chromaSim').value;
+                // Green color default: 0x00FF00
+                filterComplex.push(`${vChain}chromakey=0x00FF00:${sim}:0.2[v_chr]`);
+                vChain = '[v_chr]';
+            }
+
+            // -- Aspect Ratio (Pad/Crop) --
+            const ar = document.getElementById('aspectRatio').value;
+            if(ar === '9:16') {
+                filterComplex.push(`${vChain}scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black[v_ar]`);
+                vChain = '[v_ar]';
+            } else if (ar === '1:1') {
+                filterComplex.push(`${vChain}scale=1080:1080:force_original_aspect_ratio=decrease,pad=1080:1080:(ow-iw)/2:(oh-ih)/2:black[v_ar]`);
+                vChain = '[v_ar]';
+            }
+
+            // -- Fade In/Out --
+            if(document.getElementById('fadeInOut').checked) {
+                // Fade in 1s, fade out last 1s
+                filterComplex.push(`${vChain}fade=t=in:st=0:d=1,fade=t=out:st=${duration-1}:d=1[v_fade]`);
+                vChain = '[v_fade]';
+            }
+            
+            // Finalize Video Label
+            const finalVLabel = vChain.replace('[', '').replace(']', '');
+            // We need to alias the last chain to [v_out] if we used filters, or just use [0:v]
+            if (filterComplex.length > 0) {
+                 // Rename last output to v_out for consistency
+                 filterComplex[filterComplex.length - 1] = filterComplex[filterComplex.length - 1].replace(vChain, '[v_out]');
+            } else {
+                 // No video filters
+                 outputMaps = ['-map', '0:v', '-map', '[a_out]']; // Keep original video, custom audio
+            }
+
+            // 3. AUDIO CHAIN
+            let aChain = '';
+            
+            // Prepare Video Audio Volume
+            const volVid = document.getElementById('volVideo').value;
+            
+            if (musicFile) {
+                ffmpeg.FS('writeFile', 'music.mp3', await fetchFile(musicFile));
+                inputs.push('-i', 'music.mp3');
+                
+                const volMus = document.getElementById('volMusic').value;
+                const loop = document.getElementById('musicLoop').checked ? ':loop=-1' : ''; // Loop logic is hard in simple filter, skipping loop for stability in MVP
+                
+                // Mix: [0:a]volume [1:a]volume amix
+                filterComplex.push(`[0:a]volume=${volVid}[a1];[1:a]volume=${volMus}[a2];[a1][a2]amix=inputs=2:duration=first[a_out]`);
+            } else {
+                // Just adjust volume of original
+                filterComplex.push(`[0:a]volume=${volVid}[a_out]`);
+            }
+
+            // Build Command
+            let args = [...inputs];
+            if (filterComplex.length > 0) {
+                args.push('-filter_complex', filterComplex.join(';'));
+                // Note: If we didn't filter video, we need to handle maps carefully.
+                // Simplified approach: Always re-encode video if any filter exists.
+                if (vChain === '[0:v]' && filterComplex.length === 0) {
+                    // No filters at all
+                } else {
+                    if(vChain !== '[0:v]' && !filterComplex.join('').includes('[v_out]')) {
+                         // Fallback if my replacement logic above missed
+                         args.push('-map', vChain); 
+                    } else if (filterComplex.join('').includes('[v_out]')) {
+                         args.push('-map', '[v_out]');
+                    } else {
+                        args.push('-map', '0:v');
+                    }
+                    args.push('-map', '[a_out]');
+                }
+            }
+            
+            args.push('-c:v', 'libx264', '-preset', 'ultrafast', outputName);
+
+            log(`Запуск: ${args.join(' ')}`);
 
             try {
                 await ffmpeg.run(...args);
                 
-                // Скачивание
                 const data = ffmpeg.FS('readFile', outputName);
-                const url = URL.createObjectURL(new Blob([data.buffer], { type: `video/${ext}` }));
+                const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
                 
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = outputName;
                 a.click();
                 
-                log("Готово! Скачивание началось.");
-            } catch (error) {
-                log("Ошибка при обработке. Попробуйте параметры попроще.");
-                console.error(error);
+                log("Готово!");
+            } catch (e) {
+                log("Ошибка: " + e.message);
+                console.error(e);
             }
 
-            // Очистка
+            // Cleanup
+            btn.disabled = false;
+            document.getElementById('btnText').innerText = "Экспорт";
             ffmpeg.FS('unlink', inputName);
+            if(musicFile) ffmpeg.FS('unlink', 'music.mp3');
             try { ffmpeg.FS('unlink', outputName); } catch(e){}
-            
-            setLoading(false);
-        });
-
-        function setLoading(active) {
-            renderBtn.disabled = active;
-            document.getElementById('spinner').style.display = active ? 'block' : 'none';
-            document.getElementById('btnText').innerText = active ? 'Обработка...' : 'Экспорт видео';
-        }
-
-        function log(msg) {
-            logs.innerHTML += `> ${msg}<br>`;
-            logs.scrollTop = logs.scrollHeight;
         }
     </script>
 </body>
