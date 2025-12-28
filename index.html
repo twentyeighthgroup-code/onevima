@@ -3,395 +3,539 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onevima 1.3 - Live Studio</title>
+    <title>Onevima 1.4 - Live Studio</title>
     
+    <!-- Core Deps -->
     <script src="coi-serviceworker.js"></script>
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
-    <!-- Иконки -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <!-- Слайдер -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <!-- UI Sliders -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.js"></script>
 
     <style>
-        :root { --bg: #000000; --panel: #1c1c1e; --accent: #0A84FF; --text: #ffffff; }
+        :root {
+            --bg-dark: #0f0f10;
+            --panel: #18181b;
+            --border: #27272a;
+            --accent: #6366f1; /* Indigo */
+            --accent-hover: #4f46e5;
+            --text: #f4f4f5;
+            --text-dim: #71717a;
+        }
+
         * { box-sizing: border-box; outline: none; user-select: none; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+        body { background: var(--bg-dark); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-        /* --- LAYOUT --- */
-        .app-container { display: flex; width: 100%; height: 100%; }
+        /* --- UI LAYOUT --- */
+        .toolbar { height: 50px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .brand { font-weight: 700; letter-spacing: -0.5px; font-size: 1.1rem; }
+        .brand span { color: var(--accent); }
+        .export-btn { background: var(--accent); color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .export-btn:hover { background: var(--accent-hover); }
+        .export-btn:disabled { background: #333; cursor: not-allowed; opacity: 0.7; }
 
-        /* Left: Tools */
-        .sidebar { width: 320px; background: var(--panel); border-right: 1px solid #333; display: flex; flex-direction: column; z-index: 10; }
+        .workspace { flex: 1; display: flex; overflow: hidden; }
+
+        /* --- LEFT: ASSETS & LAYERS --- */
+        .sidebar { width: 300px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 15px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+        .layer-list { flex: 1; overflow-y: auto; padding: 10px; }
         
-        .header { padding: 20px; border-bottom: 1px solid #333; font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
-        .header span { color: var(--accent); }
+        .layer-item { background: #27272a; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .layer-item:hover { background: #3f3f46; }
+        .layer-item.active { border-color: var(--accent); background: rgba(99, 102, 241, 0.1); }
+        .layer-icon { color: var(--text-dim); }
 
-        .tools-scroll { flex: 1; overflow-y: auto; padding: 20px; }
+        .add-assets { padding: 15px; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .asset-btn { background: #27272a; border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-align: center; }
+        .asset-btn:hover { border-color: var(--text-dim); }
 
-        .tool-section { margin-bottom: 30px; }
-        .tool-title { font-size: 0.8rem; text-transform: uppercase; color: #888; margin-bottom: 10px; font-weight: 600; letter-spacing: 1px; }
-
-        /* Buttons Grid */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-
-        .btn-option {
-            background: #2c2c2e; border: 1px solid transparent; border-radius: 8px; padding: 15px 10px;
-            text-align: center; cursor: pointer; transition: 0.2s; font-size: 0.85rem; color: #ccc;
-            display: flex; flex-direction: column; align-items: center; gap: 8px;
-        }
-        .btn-option i { font-size: 1.2rem; margin-bottom: 2px; }
-        .btn-option:hover { background: #3a3a3c; }
-        .btn-option.active { background: rgba(10, 132, 255, 0.2); border-color: var(--accent); color: white; }
-
-        /* Inputs */
-        input[type="text"] { width: 100%; background: #2c2c2e; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+        /* --- CENTER: CANVAS PREVIEW --- */
+        .viewport { flex: 1; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 20px; }
+        canvas { max-width: 90%; max-height: 80%; box-shadow: 0 0 50px rgba(0,0,0,0.5); border: 1px solid #333; }
         
-        /* Render Button */
-        .footer-action { padding: 20px; border-top: 1px solid #333; }
-        .btn-main { width: 100%; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s; }
-        .btn-main:hover { opacity: 0.9; }
-        .btn-main:disabled { background: #333; color: #555; cursor: not-allowed; }
-
-        /* Center: Stage */
-        .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: #000; }
+        .timeline-controls { width: 90%; margin-top: 20px; background: #18181b; padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        .transport { display: flex; justify-content: center; gap: 20px; margin-bottom: 5px; }
+        .transport i { cursor: pointer; font-size: 1.2rem; color: var(--text); }
+        .transport i:hover { color: var(--accent); }
         
-        /* THE PREVIEW BOX */
-        .preview-wrapper { 
-            position: relative; 
-            max-width: 90%; 
-            max-height: 70vh;
-            border-radius: 12px;
-            overflow: hidden; /* Обрезает все, что вылазит */
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            border: 1px solid #333;
-        }
-
-        video { display: block; width: 100%; height: 100%; object-fit: contain; }
-
-        /* OVERLAY LAYER (Магия CSS) */
-        .overlay-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; /* Чтобы клики проходили сквозь текст к видео */
-            display: flex; justify-content: center; align-items: center;
-        }
-
-        #liveText {
-            font-family: 'Roboto', sans-serif;
-            text-align: center;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            white-space: pre-wrap;
-            display: none; /* Скрыт по умолчанию */
-        }
-
-        /* Timeline Area */
-        .timeline-area { width: 80%; margin-top: 20px; padding: 0 20px; }
+        /* Sliders */
+        .noUi-target { background: #333; border: none; height: 6px; }
         .noUi-connect { background: var(--accent); }
-        .noUi-handle { background: white; border-radius: 50%; width: 16px; height: 16px; right: -8px; border: none; box-shadow: none; cursor: grab; }
+        .noUi-handle { width: 14px; height: 14px; border-radius: 50%; background: white; border: none; box-shadow: none; right: -7px; top: -4px; cursor: grab; }
 
-        /* Upload State */
-        .empty-state { text-align: center; color: #555; cursor: pointer; }
-        .empty-state i { font-size: 4rem; margin-bottom: 15px; color: #333; transition: 0.3s; }
-        .empty-state:hover i { color: var(--accent); }
+        /* --- RIGHT: INSPECTOR --- */
+        .inspector { width: 320px; background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 20px; }
+        .prop-group { margin-bottom: 25px; }
+        .prop-title { font-size: 0.8rem; font-weight: 700; color: var(--text-dim); margin-bottom: 12px; display: flex; justify-content: space-between; }
+        
+        .control-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+        label { font-size: 0.8rem; color: #a1a1aa; }
+        input[type="text"], input[type="number"], select { background: #27272a; border: 1px solid var(--border); color: white; padding: 8px; border-radius: 6px; width: 100%; font-family: inherit; }
+        input[type="range"] { width: 100%; accent-color: var(--accent); }
+        
+        /* Hidden Inputs */
+        input[type="file"] { display: none; }
 
-        /* Loader */
-        .loader-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 100;
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-        }
-        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; margin-bottom: 20px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Overlay Loader */
+        .overlay-loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .terminal-log { width: 600px; height: 200px; background: #000; border: 1px solid #333; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #10b981; overflow-y: auto; margin-top: 20px; border-radius: 6px; }
+
+        /* Canvas hidden source */
+        #videoSource { display: none; }
+        #imgSource { display: none; }
 
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        
+    <div class="toolbar">
+        <div class="brand">Onevima <span>8.0 Ultimate</span></div>
+        <button class="export-btn" id="renderBtn" onclick="App.render()" disabled>
+            <i class="fas fa-download"></i> Экспорт Видео
+        </button>
+    </div>
+
+    <div class="workspace">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="header">Onevima <span>7.0</span></div>
-            
-            <div class="tools-scroll">
-                
-                <!-- Section 1: Aspect Ratio -->
-                <div class="tool-section">
-                    <div class="tool-title">Формат</div>
-                    <div class="grid-3">
-                        <div class="btn-option active" onclick="setAspect('orig', this)"><i class="fas fa-expand"></i>Ориг.</div>
-                        <div class="btn-option" onclick="setAspect('9:16', this)"><i class="fas fa-mobile-alt"></i>TikTok</div>
-                        <div class="btn-option" onclick="setAspect('1:1', this)"><i class="fas fa-square"></i>Insta</div>
-                    </div>
+            <div class="sidebar-header">Слои и Ассеты</div>
+            <div class="layer-list" id="layerList">
+                <!-- Dynamic Layers -->
+                <div class="layer-item active" id="layer-video" onclick="App.selectLayer('video')">
+                    <i class="fas fa-film layer-icon"></i>
+                    <div>Основное Видео</div>
                 </div>
-
-                <!-- Section 2: Look -->
-                <div class="tool-section">
-                    <div class="tool-title">Стиль (Фильтры)</div>
-                    <div class="grid-2">
-                        <div class="btn-option active" onclick="setFilter('none', this)">Обычный</div>
-                        <div class="btn-option" onclick="setFilter('bw', this)">🎬 Ч/Б</div>
-                        <div class="btn-option" onclick="setFilter('contrast', this)">🔥 Сочно</div>
-                        <div class="btn-option" onclick="setFilter('warm', this)">☀️ Тепло</div>
-                    </div>
-                </div>
-
-                <!-- Section 3: Text -->
-                <div class="tool-section">
-                    <div class="tool-title">Текст на видео</div>
-                    <input type="text" id="TextInput" placeholder="Напишите что-нибудь..." oninput="updateText()">
-                    
-                    <div class="grid-3" style="margin-bottom: 10px;">
-                        <div class="btn-option" onclick="setFont('Impact', this)">Bold</div>
-                        <div class="btn-option" onclick="setFont('Roboto', this)">Sans</div>
-                        <div class="btn-option" onclick="setFont('Pacifico', this)">Art</div>
-                    </div>
-                    
-                    <div class="grid-3">
-                        <div class="btn-option active" onclick="setColor('white', this)">⚪</div>
-                        <div class="btn-option" onclick="setColor('#Facc15', this)">🟡</div>
-                        <div class="btn-option" onclick="setColor('#f87171', this)">🔴</div>
-                    </div>
-                </div>
-
             </div>
-
-            <div class="footer-action">
-                <button class="btn-main" id="renderBtn" onclick="render()" disabled>Скачать Видео</button>
+            <div class="add-assets">
+                <div class="asset-btn" onclick="document.getElementById('uplVid').click()"><i class="fas fa-video"></i> Видео</div>
+                <div class="asset-btn" onclick="document.getElementById('uplImg').click()"><i class="fas fa-image"></i> Лого/Фото</div>
+                <div class="asset-btn" onclick="App.addTextLayer()"><i class="fas fa-font"></i> Текст</div>
+                <div class="asset-btn" onclick="App.toggleZoom()"><i class="fas fa-search-plus"></i> Зум</div>
             </div>
         </div>
 
-        <!-- STAGE -->
-        <div class="stage">
+        <!-- VIEWPORT -->
+        <div class="viewport">
+            <canvas id="previewCanvas"></canvas>
             
-            <!-- Upload Box (Hidden after upload) -->
-            <div class="empty-state" id="uploadBox" onclick="document.getElementById('fileIn').click()">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <h2>Нажмите, чтобы добавить видео</h2>
-                <p>MP4, MOV</p>
-            </div>
-            <input type="file" id="fileIn" accept="video/*" hidden>
-
-            <!-- Preview Wrapper (Video + Overlay) -->
-            <div class="preview-wrapper" id="previewBox" style="display:none;">
-                <video id="vidEl" controls></video>
-                <div class="overlay-layer">
-                    <div id="liveText"></div>
+            <div class="timeline-controls" id="timelineUI" style="opacity: 0.5; pointer-events: none;">
+                <div class="transport">
+                    <i class="fas fa-play" id="playBtn" onclick="App.togglePlay()"></i>
+                    <span id="timeDisplay" style="font-size: 0.9rem; width: 60px; text-align: center;">00:00</span>
                 </div>
+                <!-- Scrubber -->
+                <input type="range" id="scrubber" min="0" value="0" step="0.1" oninput="App.seek(this.value)">
+                <!-- Trim Range -->
+                <div id="trimSlider" style="margin-top: 10px;"></div>
             </div>
-
-            <!-- Timeline -->
-            <div class="timeline-area" id="timeBox" style="display:none;">
-                <div id="slider"></div>
-                <div style="text-align: center; color: #555; font-size: 0.8rem; margin-top: 10px;">Двигайте ползунки для обрезки</div>
-            </div>
-
-            <!-- Loader -->
-            <div class="loader-overlay" id="loader">
-                <div class="spinner"></div>
-                <div id="statusText">Обработка...</div>
-                <div style="color:#555; font-size:0.8rem; margin-top:10px">Не закрывайте вкладку</div>
-            </div>
-
         </div>
+
+        <!-- INSPECTOR -->
+        <div class="inspector" id="inspector">
+            <div style="text-align: center; color: #555; margin-top: 50px;">Загрузите видео, чтобы начать</div>
+        </div>
+    </div>
+
+    <!-- Hidden Sources -->
+    <video id="videoSource" crossorigin="anonymous"></video>
+    <img id="imgSource" crossorigin="anonymous">
+    <input type="file" id="uplVid" accept="video/*">
+    <input type="file" id="uplImg" accept="image/*">
+
+    <!-- Loader -->
+    <div class="overlay-loader" id="loader">
+        <h2 style="margin-bottom: 10px;">Рендеринг...</h2>
+        <div style="color: #71717a">Не закрывайте вкладку</div>
+        <div class="terminal-log" id="logs"></div>
     </div>
 
     <script>
         const { createFFmpeg, fetchFile } = FFmpeg;
         const ffmpeg = createFFmpeg({ log: true });
 
-        // State
-        let state = {
-            file: null,
-            filter: 'none',
-            aspect: 'orig',
-            text: '',
-            font: 'Impact',
-            color: 'white',
-            trim: { s: 0, e: 0 }
+        // --- CORE ENGINE ---
+        const App = {
+            state: {
+                video: null,
+                image: null,
+                duration: 0,
+                isPlaying: false,
+                currentTime: 0,
+                layers: {
+                    text: { active: false, content: "Onevima", x: 50, y: 50, size: 60, color: "#ffffff", font: "Arial" },
+                    image: { active: false, x: 10, y: 10, scale: 0.2, opacity: 1 },
+                    zoom: { active: false, factor: 1.5 }, // Simple center zoom
+                    video: { filter: "none", brightness: 0, contrast: 1 }
+                },
+                trim: { start: 0, end: 0 },
+                selectedLayer: 'video'
+            },
+            
+            canvas: document.getElementById('previewCanvas'),
+            ctx: document.getElementById('previewCanvas').getContext('2d'),
+            videoEl: document.getElementById('videoSource'),
+            
+            init() {
+                // Initialize Slider
+                this.trimSlider = document.getElementById('trimSlider');
+                noUiSlider.create(this.trimSlider, { start: [0, 100], connect: true, range: { min: 0, max: 100 } });
+                this.trimSlider.noUiSlider.on('update', (v) => {
+                    this.state.trim.start = parseFloat(v[0]);
+                    this.state.trim.end = parseFloat(v[1]);
+                });
+
+                // Listeners
+                document.getElementById('uplVid').addEventListener('change', (e) => this.loadVideo(e.target.files[0]));
+                document.getElementById('uplImg').addEventListener('change', (e) => this.loadImage(e.target.files[0]));
+                
+                // Animation Loop
+                this.loop();
+            },
+
+            loadVideo(file) {
+                if(!file) return;
+                this.state.video = file;
+                const url = URL.createObjectURL(file);
+                this.videoEl.src = url;
+                
+                this.videoEl.onloadedmetadata = () => {
+                    this.state.duration = this.videoEl.duration;
+                    this.canvas.width = 1280; // Standard HD Canvas
+                    this.canvas.height = 720;
+                    
+                    // Unlock UI
+                    document.getElementById('timelineUI').style.opacity = 1;
+                    document.getElementById('timelineUI').style.pointerEvents = 'all';
+                    document.getElementById('renderBtn').disabled = false;
+                    document.getElementById('scrubber').max = this.state.duration;
+                    
+                    // Update Trim Slider
+                    this.trimSlider.noUiSlider.updateOptions({ range: { min: 0, max: this.state.duration }, start: [0, this.state.duration] });
+                    
+                    this.renderInspector();
+                };
+            },
+
+            loadImage(file) {
+                if(!file) return;
+                this.state.image = file;
+                const url = URL.createObjectURL(file);
+                document.getElementById('imgSource').src = url;
+                
+                this.state.layers.image.active = true;
+                
+                // Add to sidebar logic
+                const exists = document.getElementById('layer-img');
+                if(!exists) {
+                    const div = document.createElement('div');
+                    div.className = 'layer-item';
+                    div.id = 'layer-img';
+                    div.innerHTML = '<i class="fas fa-image layer-icon"></i> <div>Логотип</div>';
+                    div.onclick = () => this.selectLayer('image');
+                    document.getElementById('layerList').appendChild(div);
+                }
+                this.selectLayer('image');
+            },
+
+            addTextLayer() {
+                this.state.layers.text.active = true;
+                const exists = document.getElementById('layer-text');
+                if(!exists) {
+                    const div = document.createElement('div');
+                    div.className = 'layer-item';
+                    div.id = 'layer-text';
+                    div.innerHTML = '<i class="fas fa-font layer-icon"></i> <div>Текст</div>';
+                    div.onclick = () => this.selectLayer('text');
+                    document.getElementById('layerList').appendChild(div);
+                }
+                this.selectLayer('text');
+            },
+
+            toggleZoom() {
+                this.state.layers.zoom.active = !this.state.layers.zoom.active;
+                alert(this.state.layers.zoom.active ? "Зум включен (Центр)" : "Зум выключен");
+            },
+
+            selectLayer(name) {
+                this.state.selectedLayer = name;
+                document.querySelectorAll('.layer-item').forEach(el => el.classList.remove('active'));
+                const el = document.getElementById(`layer-${name}`);
+                if(el) el.classList.add('active');
+                this.renderInspector();
+            },
+
+            // --- RENDER LOOP (CANVAS) ---
+            loop() {
+                if(!this.state.video) { requestAnimationFrame(() => this.loop()); return; }
+
+                const ctx = this.ctx;
+                const cw = this.canvas.width;
+                const ch = this.canvas.height;
+
+                // 1. Clear
+                ctx.clearRect(0, 0, cw, ch);
+
+                // 2. Draw Video (with filters simulation)
+                // Filter simulation is limited in Canvas context 2d, usually needs custom shaders.
+                // We will apply CSS-like filters for preview
+                let filters = [];
+                if(this.state.layers.video.filter === 'bw') filters.push('grayscale(1)');
+                if(this.state.layers.video.filter === 'sepia') filters.push('sepia(1)');
+                ctx.filter = filters.join(' ') || 'none';
+                
+                // Zoom Logic (Ken Burns Simulation)
+                if(this.state.layers.zoom.active) {
+                    const scale = this.state.layers.zoom.factor;
+                    // Draw magnified center
+                    const sw = this.videoEl.videoWidth / scale;
+                    const sh = this.videoEl.videoHeight / scale;
+                    const sx = (this.videoEl.videoWidth - sw) / 2;
+                    const sy = (this.videoEl.videoHeight - sh) / 2;
+                    ctx.drawImage(this.videoEl, sx, sy, sw, sh, 0, 0, cw, ch);
+                } else {
+                    ctx.drawImage(this.videoEl, 0, 0, cw, ch);
+                }
+                
+                ctx.filter = 'none'; // Reset filter for overlays
+
+                // 3. Draw Image Overlay
+                if(this.state.layers.image.active && this.state.image) {
+                    const img = document.getElementById('imgSource');
+                    const props = this.state.layers.image;
+                    ctx.globalAlpha = props.opacity;
+                    const iw = img.width * props.scale;
+                    const ih = img.height * props.scale;
+                    // Coords in %
+                    const x = (props.x / 100) * cw;
+                    const y = (props.y / 100) * ch;
+                    ctx.drawImage(img, x, y, iw, ih);
+                    ctx.globalAlpha = 1;
+                }
+
+                // 4. Draw Text Overlay
+                if(this.state.layers.text.active) {
+                    const txt = this.state.layers.text;
+                    ctx.font = `bold ${txt.size}px ${txt.font}`;
+                    ctx.fillStyle = txt.color;
+                    ctx.textAlign = 'center';
+                    const x = (txt.x / 100) * cw;
+                    const y = (txt.y / 100) * ch;
+                    ctx.fillText(txt.content, x, y);
+                }
+
+                // Update UI Time
+                if(this.state.isPlaying) {
+                    document.getElementById('scrubber').value = this.videoEl.currentTime;
+                    document.getElementById('timeDisplay').innerText = this.videoEl.currentTime.toFixed(1);
+                    
+                    // Loop Logic
+                    if(this.videoEl.currentTime >= this.state.trim.end) {
+                        this.videoEl.currentTime = this.state.trim.start;
+                    }
+                }
+
+                requestAnimationFrame(() => this.loop());
+            },
+
+            togglePlay() {
+                if(this.videoEl.paused) {
+                    this.videoEl.play();
+                    this.state.isPlaying = true;
+                    document.getElementById('playBtn').className = 'fas fa-pause';
+                } else {
+                    this.videoEl.pause();
+                    this.state.isPlaying = false;
+                    document.getElementById('playBtn').className = 'fas fa-play';
+                }
+            },
+
+            seek(val) {
+                this.videoEl.currentTime = val;
+                this.state.currentTime = val;
+            },
+
+            // --- INSPECTOR UI GENERATOR ---
+            renderInspector() {
+                const box = document.getElementById('inspector');
+                box.innerHTML = '';
+                const layer = this.state.selectedLayer;
+
+                if(layer === 'video') {
+                    box.innerHTML = `
+                        <div class="prop-group">
+                            <div class="prop-title">ВИДЕО ФИЛЬТРЫ</div>
+                            <div class="control-row">
+                                <label>Стиль</label>
+                                <select onchange="App.state.layers.video.filter = this.value">
+                                    <option value="none">Нормальный</option>
+                                    <option value="bw">Ч/Б</option>
+                                    <option value="sepia">Сепия</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="prop-group">
+                            <div class="prop-title">АУДИО</div>
+                            <div class="control-row">
+                                <label>Громкость</label>
+                                <input type="range" min="0" max="2" step="0.1" value="1" id="volInp">
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if(layer === 'text') {
+                    const txt = this.state.layers.text;
+                    box.innerHTML = `
+                        <div class="prop-group">
+                            <div class="prop-title">ТЕКСТ</div>
+                            <div class="control-row"><label>Содержание</label><input type="text" value="${txt.content}" oninput="App.state.layers.text.content = this.value"></div>
+                            <div class="control-row"><label>Размер</label><input type="number" value="${txt.size}" oninput="App.state.layers.text.size = this.value"></div>
+                            <div class="control-row"><label>Цвет</label><input type="color" value="${txt.color}" oninput="App.state.layers.text.color = this.value" style="height:40px; width:100%"></div>
+                        </div>
+                        <div class="prop-group">
+                            <div class="prop-title">ПОЗИЦИЯ %</div>
+                            <div class="control-row"><label>X (Горизонталь)</label><input type="range" min="0" max="100" value="${txt.x}" oninput="App.state.layers.text.x = this.value"></div>
+                            <div class="control-row"><label>Y (Вертикаль)</label><input type="range" min="0" max="100" value="${txt.y}" oninput="App.state.layers.text.y = this.value"></div>
+                        </div>
+                    `;
+                }
+
+                if(layer === 'image') {
+                    const img = this.state.layers.image;
+                    box.innerHTML = `
+                        <div class="prop-group">
+                            <div class="prop-title">ИЗОБРАЖЕНИЕ</div>
+                            <div class="control-row"><label>Масштаб</label><input type="range" min="0.1" max="1" step="0.1" value="${img.scale}" oninput="App.state.layers.image.scale = this.value"></div>
+                            <div class="control-row"><label>Прозрачность</label><input type="range" min="0" max="1" step="0.1" value="${img.opacity}" oninput="App.state.layers.image.opacity = this.value"></div>
+                        </div>
+                        <div class="prop-group">
+                            <div class="prop-title">ПОЗИЦИЯ %</div>
+                            <div class="control-row"><label>X</label><input type="range" min="0" max="100" value="${img.x}" oninput="App.state.layers.image.x = this.value"></div>
+                            <div class="control-row"><label>Y</label><input type="range" min="0" max="100" value="${img.y}" oninput="App.state.layers.image.y = this.value"></div>
+                        </div>
+                    `;
+                }
+            },
+
+            // --- EXPORT PIPELINE ---
+            async render() {
+                const loader = document.getElementById('loader');
+                const logBox = document.getElementById('logs');
+                const log = (msg) => logBox.innerHTML += `> ${msg}<br>`;
+                
+                loader.style.display = 'flex';
+                this.videoEl.pause();
+                
+                log("Инициализация FFmpeg...");
+                if(!ffmpeg.isLoaded()) await ffmpeg.load();
+
+                // 1. Inputs
+                log("Запись файлов...");
+                ffmpeg.FS('writeFile', 'video.mp4', await fetchFile(this.state.video));
+                
+                // 2. Complex Filter Building
+                // We must replicate exactly what Canvas is drawing using filter_complex
+                let filters = [];
+                let chain = '[0:v]'; // Start chain
+                let inputs = ['-i', 'video.mp4'];
+                let inputIdx = 1;
+
+                // Trim first (always best practice)
+                filters.push(`${chain}trim=${this.state.trim.start}:${this.state.trim.end},setpts=PTS-STARTPTS[v_trim]`);
+                chain = '[v_trim]';
+
+                // Video Filters
+                if(this.state.layers.video.filter === 'bw') {
+                    filters.push(`${chain}hue=s=0[v_bw]`);
+                    chain = '[v_bw]';
+                }
+
+                // Zoom (Advanced)
+                if(this.state.layers.zoom.active) {
+                    // Zoompan filter: zoom 1.5x center static
+                    // z=1.5, x and y center.
+                    filters.push(`${chain}scale=1280:-2,zoompan=z=${this.state.layers.zoom.factor}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:fps=30[v_zoom]`);
+                    chain = '[v_zoom]';
+                }
+
+                // Image Overlay
+                if(this.state.layers.image.active && this.state.image) {
+                    ffmpeg.FS('writeFile', 'overlay.png', await fetchFile(this.state.image));
+                    inputs.push('-i', 'overlay.png');
+                    
+                    const p = this.state.layers.image;
+                    // Scale image first
+                    const scaleFilter = `[${inputIdx}:v]scale=iw*${p.scale}:-1[img_scaled]`;
+                    filters.push(scaleFilter);
+                    
+                    // Format coords for overlay (W*%)
+                    const x = `(W*${p.x/100})`;
+                    const y = `(H*${p.y/100})`;
+                    
+                    filters.push(`${chain}[img_scaled]overlay=${x}:${y}:format=auto[v_over]`);
+                    chain = '[v_over]';
+                    inputIdx++;
+                }
+
+                // Text Overlay
+                if(this.state.layers.text.active) {
+                    // We need a font. Download Roboto default
+                    log("Скачивание шрифта...");
+                    const fontData = await fetch('https://cdn.jsdelivr.net/gh/google/fonts/apache/roboto/Roboto-Bold.ttf').then(r=>r.arrayBuffer());
+                    ffmpeg.FS('writeFile', 'font.ttf', new Uint8Array(fontData));
+                    
+                    const t = this.state.layers.text;
+                    const safeTxt = t.content.replace(/:/g, "\\:");
+                    // x = (W*%) - centers text if needed, but simple coord is better for now
+                    const x = `(w*${t.x/100})`;
+                    const y = `(h*${t.y/100})`;
+                    
+                    filters.push(`${chain}drawtext=fontfile=font.ttf:text='${safeTxt}':fontcolor=${t.color}:fontsize=${t.size}:x=${x}:y=${y}[v_txt]`);
+                    chain = '[v_txt]';
+                }
+
+                // Audio Trim
+                let audioChain = `[0:a]atrim=${this.state.trim.start}:${this.state.trim.end},asetpts=PTS-STARTPTS[a_out]`;
+
+                // 3. Command Execution
+                const cmd = [
+                    ...inputs,
+                    '-filter_complex', `${filters.join(';')};${audioChain}`,
+                    '-map', chain, 
+                    '-map', '[a_out]',
+                    '-c:v', 'libx264', 
+                    '-preset', 'ultrafast', // Speed priority
+                    '-crf', '23', // Quality
+                    'output.mp4'
+                ];
+
+                log("Запуск рендера: " + cmd.join(' '));
+                
+                try {
+                    await ffmpeg.run(...cmd);
+                    
+                    log("Сохранение файла...");
+                    const data = ffmpeg.FS('readFile', 'output.mp4');
+                    const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'onevima_ultimate.mp4';
+                    a.click();
+                    
+                    log("УСПЕХ!");
+                    setTimeout(() => loader.style.display = 'none', 2000);
+                } catch(e) {
+                    log("ОШИБКА: " + e.message);
+                    console.error(e);
+                }
+            }
         };
 
-        const fontUrls = {
-            'Impact': 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/anton/Anton-Regular.ttf', // Anton as Impact alternative
-            'Roboto': 'https://cdn.jsdelivr.net/gh/google/fonts/apache/roboto/Roboto-Regular.ttf',
-            'Pacifico': 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/pacifico/Pacifico-Regular.ttf'
-        };
-
-        // UI References
-        const vidEl = document.getElementById('vidEl');
-        const liveText = document.getElementById('liveText');
-        const uploadBox = document.getElementById('uploadBox');
-        const previewBox = document.getElementById('previewBox');
-        const timeBox = document.getElementById('timeBox');
-        const renderBtn = document.getElementById('renderBtn');
-        const slider = document.getElementById('slider');
-
-        // --- INIT SLIDER ---
-        noUiSlider.create(slider, { start: [0, 100], connect: true, range: { min: 0, max: 100 } });
-
-        // --- UPLOAD HANDLER ---
-        document.getElementById('fileIn').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            state.file = file;
-            
-            const url = URL.createObjectURL(file);
-            vidEl.src = url;
-            
-            uploadBox.style.display = 'none';
-            previewBox.style.display = 'block';
-            
-            vidEl.onloadedmetadata = () => {
-                timeBox.style.display = 'block';
-                slider.noUiSlider.updateOptions({ range: { min: 0, max: vidEl.duration }, start: [0, vidEl.duration] });
-                renderBtn.disabled = false;
-            };
-        });
-
-        // --- LIVE PREVIEW LOGIC (CSS MAGIC) ---
-        
-        function setFilter(val, el) {
-            state.filter = val;
-            
-            // Visual feedback on buttons
-            document.querySelectorAll(`[onclick^="setFilter"]`).forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
-
-            // Apply CSS Filter to Video Tag
-            vidEl.style.filter = 'none';
-            if(val === 'bw') vidEl.style.filter = 'grayscale(1)';
-            if(val === 'contrast') vidEl.style.filter = 'contrast(1.3) saturate(1.3)';
-            if(val === 'warm') vidEl.style.filter = 'sepia(0.4)';
-        }
-
-        function setAspect(val, el) {
-            state.aspect = val;
-            document.querySelectorAll(`[onclick^="setAspect"]`).forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
-
-            // Simulate Aspect Ratio in Preview
-            // Note: We can't easily crop the video tag visually without complex divs, 
-            // so we rely on FFmpeg for the final cut, but we could add black bars in CSS if needed.
-            // For convenience, we assume user trusts the button.
-        }
-
-        function updateText() {
-            const val = document.getElementById('TextInput').value;
-            state.text = val;
-            
-            if(val.trim() === '') {
-                liveText.style.display = 'none';
-            } else {
-                liveText.style.display = 'block';
-                liveText.innerText = val;
-            }
-        }
-
-        function setFont(val, el) {
-            state.font = val;
-            document.querySelectorAll(`[onclick^="setFont"]`).forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
-            
-            // Apply CSS Font
-            if(val === 'Impact') liveText.style.fontFamily = 'Impact, sans-serif';
-            if(val === 'Pacifico') liveText.style.fontFamily = 'cursive';
-            if(val === 'Roboto') liveText.style.fontFamily = 'sans-serif';
-        }
-
-        function setColor(val, el) {
-            state.color = val;
-            document.querySelectorAll(`[onclick^="setColor"]`).forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
-            
-            liveText.style.color = val;
-        }
-
-        // Slider Updates
-        slider.noUiSlider.on('update', (v) => {
-            state.trim.s = parseFloat(v[0]);
-            state.trim.e = parseFloat(v[1]);
-        });
-
-        // --- RENDER LOGIC (FFMPEG) ---
-        async function render() {
-            const loader = document.getElementById('loader');
-            const status = document.getElementById('statusText');
-            loader.style.display = 'flex';
-            
-            status.innerText = "Загрузка движка...";
-            if(!ffmpeg.isLoaded()) await ffmpeg.load();
-
-            status.innerText = "Подготовка видео...";
-            ffmpeg.FS('writeFile', 'in.mp4', await fetchFile(state.file));
-
-            // Font loading
-            if(state.text) {
-                status.innerText = "Скачивание шрифта...";
-                const fontData = await fetch(fontUrls[state.font]).then(r => r.arrayBuffer());
-                ffmpeg.FS('writeFile', 'font.ttf', new Uint8Array(fontData));
-            }
-
-            // Build Filters
-            let filters = [];
-            
-            // 1. Trim
-            filters.push(`trim=${state.trim.s}:${state.trim.e},setpts=PTS-STARTPTS`);
-
-            // 2. Aspect Ratio (FFmpeg logic)
-            if(state.aspect === '9:16') filters.push('scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black');
-            if(state.aspect === '1:1') filters.push('scale=1080:1080:force_original_aspect_ratio=decrease,pad=1080:1080:(ow-iw)/2:(oh-ih)/2:black');
-
-            // 3. Look (Matching CSS logic)
-            if(state.filter === 'bw') filters.push('hue=s=0');
-            if(state.filter === 'contrast') filters.push('eq=contrast=1.3:saturation=1.3');
-            if(state.filter === 'warm') filters.push('colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131');
-
-            // 4. Text
-            if(state.text) {
-                const safeText = state.text.replace(/:/g, "\\:");
-                // Center positioning logic
-                filters.push(`drawtext=fontfile=font.ttf:text='${safeText}':fontcolor=${state.color}:fontsize=60:x=(w-text_w)/2:y=(h-text_h)/2`);
-            }
-
-            status.innerText = "Рендеринг (Ждите)...";
-
-            // Command Construction
-            let cmd = ['-i', 'in.mp4'];
-            // Sync Audio Trim
-            let complex = `[0:v]${filters.join(',')}[v];[0:a]atrim=${state.trim.s}:${state.trim.e},asetpts=PTS-STARTPTS[a]`;
-            
-            cmd.push('-filter_complex', complex, '-map', '[v]', '-map', '[a]');
-            cmd.push('-c:v', 'libx264', '-preset', 'ultrafast', 'out.mp4');
-
-            try {
-                await ffmpeg.run(...cmd);
-                
-                const data = ffmpeg.FS('readFile', 'out.mp4');
-                const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'onevima_edit.mp4';
-                a.click();
-                
-                status.innerText = "Готово!";
-                setTimeout(() => loader.style.display = 'none', 2000);
-            } catch(e) {
-                status.innerText = "Ошибка!";
-                console.error(e);
-                alert("Ошибка рендера. Попробуйте обновить страницу.");
-                loader.style.display = 'none';
-            }
-
-            // Cleanup
-            try {
-                ffmpeg.FS('unlink', 'in.mp4');
-                ffmpeg.FS('unlink', 'out.mp4');
-                if(state.text) ffmpeg.FS('unlink', 'font.ttf');
-            } catch(e){}
-        }
+        // Start
+        App.init();
 
     </script>
 </body>
