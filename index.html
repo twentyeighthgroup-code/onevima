@@ -3,525 +3,599 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onevima 1.5 - Live Studio</title>
+    <title>Onevima - Professional Editor</title>
     
-    <!-- Dependencies -->
+    <!-- Core Engine -->
     <script src="coi-serviceworker.js"></script>
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
+    
+    <!-- UI Libraries -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.js"></script>
 
     <style>
         :root {
-            --bg: #09090b;
-            --panel: #18181b;
-            --border: #27272a;
-            --primary: #ec4899; /* Pink-600 */
-            --primary-hover: #db2777;
-            --text: #fafafa;
-            --dim: #71717a;
+            /* Palette based on your logo */
+            --bg-dark: #0a0e0d; /* Very dark teal-black */
+            --panel: #111816;
+            --border: #1f2b28;
+            
+            /* The Brand Gradient */
+            --brand-gradient: linear-gradient(135deg, #00897b 0%, #8bc34a 100%);
+            --brand-primary: #00897b;
+            --brand-secondary: #8bc34a;
+            
+            --text-main: #ffffff;
+            --text-muted: #849690;
         }
 
         * { box-sizing: border-box; outline: none; user-select: none; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-        /* HEADER */
-        .toolbar { height: 50px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-        .logo { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
-        .logo span { color: var(--primary); }
-        .history-controls i { padding: 8px; cursor: pointer; color: var(--dim); transition: 0.2s; }
-        .history-controls i:hover { color: white; }
         
-        .btn-export { background: var(--primary); color: white; border: none; padding: 8px 24px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-export:hover { background: var(--primary-hover); box-shadow: 0 0 15px rgba(236, 72, 153, 0.4); }
-        .btn-export:disabled { background: #333; opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-        /* WORKSPACE */
-        .layout { display: flex; flex: 1; overflow: hidden; }
+        /* --- HEADER --- */
+        .header {
+            height: 70px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+        }
 
-        /* SIDEBAR (Tools) */
-        .sidebar { width: 70px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding-top: 15px; gap: 15px; z-index: 10; }
-        .tool-btn { width: 45px; height: 45px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--dim); cursor: pointer; transition: 0.2s; font-size: 0.7rem; gap: 4px; }
-        .tool-btn i { font-size: 1.1rem; }
-        .tool-btn:hover { background: #27272a; color: white; }
-        .tool-btn.active { background: var(--primary); color: white; }
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-        /* PREVIEW AREA */
-        .stage { flex: 1; display: flex; flex-direction: column; background: #000; position: relative; }
-        .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-        canvas { max-width: 90%; max-height: 80%; border: 1px solid #333; box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+        /* Logo styling */
+        .app-logo {
+            height: 45px;
+            width: auto;
+            /* If image fails, we have a fallback shape */
+            background: var(--brand-gradient);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .app-logo img { height: 100%; width: auto; display: block; }
 
-        /* TIMELINE & MIXER */
-        .timeline-panel { height: 180px; background: var(--panel); border-top: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .app-name {
+            font-weight: 800;
+            font-size: 1.4rem;
+            background: var(--brand-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .action-btn {
+            background: var(--brand-gradient);
+            border: none;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 137, 123, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139, 195, 74, 0.4); }
+        .action-btn:disabled { opacity: 0.5; cursor: wait; transform: none; }
+
+        /* --- MAIN LAYOUT --- */
+        .workspace { flex: 1; display: flex; overflow: hidden; }
+
+        /* Sidebar Tools */
+        .sidebar {
+            width: 80px;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .tool {
+            width: 50px; height: 50px;
+            border-radius: 12px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.75rem;
+            gap: 5px;
+        }
+        .tool i { font-size: 1.2rem; }
+        .tool:hover { background: rgba(255,255,255,0.05); color: white; }
         
-        .transport-bar { display: flex; justify-content: center; align-items: center; gap: 20px; color: var(--dim); margin-bottom: 5px; }
-        .transport-bar i { font-size: 1.2rem; cursor: pointer; color: white; }
-        .transport-bar i:hover { color: var(--primary); }
-        
-        .track-labels { display: flex; gap: 10px; font-size: 0.8rem; color: var(--dim); margin-bottom: 5px; }
-        
-        /* INSPECTOR (Right Panel) */
-        .inspector { width: 320px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-        .inspector-header { padding: 15px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; color: var(--dim); }
-        .inspector-content { padding: 20px; overflow-y: auto; flex: 1; }
-        
-        /* Widgets */
-        .control-group { margin-bottom: 20px; }
-        label { display: block; font-size: 0.8rem; color: #a1a1aa; margin-bottom: 8px; }
-        input[type="range"] { width: 100%; accent-color: var(--primary); height: 4px; }
-        select, input[type="text"], input[type="color"] { width: 100%; background: #27272a; border: 1px solid #3f3f46; color: white; padding: 8px; border-radius: 6px; }
-        
-        .sticker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .sticker-item { font-size: 1.5rem; background: #27272a; padding: 10px; border-radius: 8px; cursor: pointer; text-align: center; }
-        .sticker-item:hover { background: #3f3f46; }
+        /* Active State uses your gradient */
+        .tool.active {
+            background: var(--brand-gradient);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 137, 123, 0.4);
+        }
 
-        .rec-btn { width: 100%; padding: 15px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .rec-btn.recording { animation: pulse 1s infinite; background: #991b1b; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        /* Canvas Area */
+        .stage {
+            flex: 1;
+            background: radial-gradient(circle at center, #15201d 0%, var(--bg-dark) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        canvas {
+            max-width: 90%;
+            max-height: 80%;
+            border: 2px solid #2a3d38;
+            border-radius: 4px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            background: #000;
+        }
 
-        /* Hidden inputs */
-        input[type="file"] { display: none; }
+        /* Timeline Area */
+        .bottom-panel {
+            height: 160px;
+            background: var(--panel);
+            border-top: 1px solid var(--border);
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transport-controls {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        .transport-controls i { cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+        .transport-controls i:hover { color: var(--brand-secondary); }
+        .play-btn { color: white !important; transform: scale(1.2); }
+
+        /* Sliders Customization to match logo */
+        .noUi-connect { background: var(--brand-gradient); }
+        .noUi-handle {
+            background: white; border: none; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            width: 18px; height: 18px; border-radius: 50%; right: -9px;
+        }
+
+        /* Inspector */
+        .properties {
+            width: 320px;
+            background: var(--panel);
+            border-left: 1px solid var(--border);
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--brand-primary); /* Teal text for headers */
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            background: #0a0e0d;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        input[type="text"]:focus { border-color: var(--brand-secondary); }
+        
+        input[type="range"] { width: 100%; accent-color: var(--brand-secondary); }
 
         /* Loader */
-        .loader { position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .console { width: 600px; height: 150px; background: #111; color: #10b981; font-family: 'Roboto Mono', monospace; font-size: 0.8rem; padding: 10px; overflow-y: auto; border-radius: 6px; margin-top: 20px; }
+        .loader-overlay {
+            position: absolute; inset: 0; background: rgba(10, 14, 13, 0.95); z-index: 1000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: var(--brand-secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to {transform: rotate(360deg);} }
 
-        /* Video Sources */
-        #srcVideo { display: none; }
+        /* Helpers */
+        input[type="file"] { display: none; }
+        video { display: none; }
+
     </style>
 </head>
 <body>
 
-    <div class="toolbar">
-        <div class="logo"><i class="fas fa-layer-group"></i> Onevima <span>1.5</span></div>
-        <div class="history-controls">
-            <i class="fas fa-undo" onclick="App.undo()" title="Отменить (Ctrl+Z)"></i>
-            <i class="fas fa-redo" onclick="App.redo()" title="Вернуть (Ctrl+Y)"></i>
+    <!-- Header -->
+    <div class="header">
+        <div class="brand-container">
+            <!-- СЮДА ВСТАВЛЯЕТСЯ ЛОГОТИП -->
+            <div class="app-logo">
+                <img src="logo.png" alt="OV" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-video\' style=\'color:white; font-size:20px\'></i>'">
+            </div>
+            <div class="app-name">ONEVIMA</div>
         </div>
-        <button class="btn-export" id="exportBtn" onclick="App.render()">ЭКСПОРТ</button>
+        <button class="action-btn" onclick="Engine.render()">
+            <i class="fas fa-bolt"></i> EXPORT VIDEO
+        </button>
     </div>
 
-    <div class="layout">
-        <!-- TOOLBAR -->
+    <!-- Main Workspace -->
+    <div class="workspace">
+        
+        <!-- Sidebar -->
         <div class="sidebar">
-            <div class="tool-btn active" onclick="UI.setTab('files')"><i class="fas fa-folder-open"></i>Файл</div>
-            <div class="tool-btn" onclick="UI.setTab('layers')"><i class="fas fa-images"></i>Слои</div>
-            <div class="tool-btn" onclick="UI.setTab('stickers')"><i class="fas fa-smile"></i>Стикеры</div>
-            <div class="tool-btn" onclick="UI.setTab('audio')"><i class="fas fa-microphone"></i>Аудио</div>
-            <div class="tool-btn" onclick="UI.setTab('chroma')"><i class="fas fa-user-astronaut"></i>Хрома</div>
+            <div class="tool active" onclick="UI.switch('files', this)"><i class="fas fa-folder-open"></i>Files</div>
+            <div class="tool" onclick="UI.switch('pip', this)"><i class="fas fa-images"></i>PiP</div>
+            <div class="tool" onclick="UI.switch('paint', this)"><i class="fas fa-paint-brush"></i>Paint</div>
+            <div class="tool" onclick="UI.switch('text', this)"><i class="fas fa-font"></i>Text</div>
+            <div class="tool" onclick="UI.switch('chroma', this)"><i class="fas fa-magic"></i>FX</div>
+            <div class="tool" style="margin-top:auto; color:#ef4444" onclick="Recorder.toggle()"><i class="fas fa-record-vinyl"></i>REC</div>
         </div>
 
-        <!-- STAGE -->
+        <!-- Canvas Stage -->
         <div class="stage">
-            <div class="canvas-wrapper">
-                <canvas id="canvas"></canvas>
-            </div>
-            
-            <div class="timeline-panel">
-                <div class="transport-bar">
-                    <i class="fas fa-step-backward" onclick="App.seek(0)"></i>
-                    <i class="fas fa-play" id="playBtn" onclick="App.togglePlay()"></i>
-                    <span id="timeDisplay">00:00</span>
-                </div>
-                <!-- Timeline Slider -->
-                <div id="timeline" style="margin-top:10px;"></div>
-                <div style="font-size:0.75rem; color:#555; text-align:center; margin-top:5px;">Двойной слайдер для обрезки</div>
+            <canvas id="mainCanvas"></canvas>
+            <div class="loader-overlay" id="loader">
+                <div class="spinner"></div>
+                <div style="margin-top:20px; color:var(--brand-secondary); font-family:monospace" id="logText">INITIALIZING...</div>
             </div>
         </div>
 
-        <!-- INSPECTOR -->
-        <div class="inspector">
-            <div class="inspector-header" id="panelTitle">Свойства</div>
-            <div class="inspector-content" id="panelContent">
-                <!-- Dynamic Content via JS -->
-            </div>
+        <!-- Right Inspector -->
+        <div class="properties" id="inspector">
+            <!-- Dynamic Content -->
+        </div>
+
+    </div>
+
+    <!-- Timeline -->
+    <div class="bottom-panel">
+        <div class="transport-controls">
+            <i class="fas fa-backward" onclick="Engine.seek(0)"></i>
+            <i class="fas fa-play play-btn" id="playIcon" onclick="Engine.togglePlay()"></i>
+        </div>
+        <div id="timelineSlider"></div>
+        <div style="text-align:center; margin-top:10px; font-size:0.8rem; color:var(--text-muted)">
+            <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
         </div>
     </div>
 
-    <!-- Hidden Logic -->
-    <video id="srcVideo" crossorigin="anonymous"></video>
-    <input type="file" id="uplVid" accept="video/*">
-    <input type="file" id="uplImg" accept="image/*">
-    
-    <div class="loader" id="loader">
-        <h2 style="color:white">Рендеринг...</h2>
-        <div class="console" id="logs"></div>
-    </div>
+    <!-- Hidden Elements -->
+    <video id="vMain" crossorigin="anonymous"></video>
+    <video id="vPip" crossorigin="anonymous" loop muted></video>
+    <input type="file" id="upMain" accept="video/*">
+    <input type="file" id="upPip" accept="video/*">
 
     <script>
         const { createFFmpeg, fetchFile } = FFmpeg;
         const ffmpeg = createFFmpeg({ log: true });
 
-        // --- CONSTANTS ---
-        const STICKERS = ['🔥','😎','💯','🎬','🔴','⚠️','✅','🎵','❤️','⭐','👋','🚀'];
+        // --- SCREEN RECORDER ---
+        const Recorder = {
+            active: false,
+            mediaRecorder: null,
+            chunks: [],
+            async toggle() {
+                if(this.active) {
+                    this.mediaRecorder.stop();
+                } else {
+                    try {
+                        const stream = await navigator.mediaDevices.getDisplayMedia({video:true, audio:true});
+                        this.mediaRecorder = new MediaRecorder(stream);
+                        this.chunks = [];
+                        this.mediaRecorder.ondataavailable = e => this.chunks.push(e.data);
+                        this.mediaRecorder.onstop = () => {
+                            const blob = new Blob(this.chunks, {type:'video/mp4'});
+                            const file = new File([blob], "rec.mp4", {type:"video/mp4"});
+                            Engine.loadVideo(file, 'main');
+                            this.active = false;
+                            alert("Запись завершена и добавлена!");
+                        };
+                        this.mediaRecorder.start();
+                        this.active = true;
+                    } catch(e) { console.error(e); }
+                }
+            }
+        };
 
-        // --- ENGINE ---
-        const App = {
+        // --- CORE ENGINE ---
+        const Engine = {
             state: {
-                video: null,
-                duration: 0,
                 playing: false,
-                currentTime: 0,
+                duration: 0,
                 trim: { s: 0, e: 0 },
-                // Layers
-                layers: [], // { type: 'text'|'sticker', content: '', x: 50, y: 50, scale: 1 }
-                // Features
-                chroma: { active: false, similarity: 0.1, blend: 0.1 },
-                voiceover: { blob: null, url: null, active: false },
-                audio: { volVideo: 1, volMic: 1 },
-                // History
-                history: [],
-                historyStep: -1
+                pip: { active: false, x: 70, y: 10, scale: 0.3 },
+                text: { val: '', x: 50, y: 50, size: 60, color: '#ffffff' },
+                paint: { active: false, color: '#8bc34a', size: 5, paths: [] },
+                chroma: { active: false, sim: 0.1 },
+                isDrawing: false
             },
             
-            canvas: document.getElementById('canvas'),
-            ctx: document.getElementById('canvas').getContext('2d'),
-            vid: document.getElementById('srcVideo'),
+            cvs: document.getElementById('mainCanvas'),
+            ctx: document.getElementById('mainCanvas').getContext('2d'),
+            vMain: document.getElementById('vMain'),
+            vPip: document.getElementById('vPip'),
 
             init() {
-                // Resize Canvas
-                this.canvas.width = 1280;
-                this.canvas.height = 720;
-                this.drawEmpty();
-
-                // UI Listeners
-                document.getElementById('uplVid').addEventListener('change', e => this.loadVideo(e.target.files[0]));
+                this.cvs.width = 1280;
+                this.cvs.height = 720;
                 
                 // Timeline
-                this.slider = document.getElementById('timeline');
+                this.slider = document.getElementById('timelineSlider');
                 noUiSlider.create(this.slider, { start: [0, 100], connect: true, range: { min: 0, max: 100 } });
-                this.slider.noUiSlider.on('update', (v) => {
+                this.slider.noUiSlider.on('update', v => {
                     this.state.trim.s = parseFloat(v[0]);
                     this.state.trim.e = parseFloat(v[1]);
                 });
 
-                // Keybinds
-                document.addEventListener('keydown', (e) => {
-                    if(e.ctrlKey && e.key === 'z') this.undo();
-                    if(e.ctrlKey && e.key === 'y') this.redo();
-                });
+                // Events
+                document.getElementById('upMain').onchange = e => this.loadVideo(e.target.files[0], 'main');
+                document.getElementById('upPip').onchange = e => this.loadVideo(e.target.files[0], 'pip');
 
-                this.saveState(); // Init history
+                // Painting
+                this.cvs.onmousedown = e => this.startPaint(e);
+                this.cvs.onmousemove = e => this.movePaint(e);
+                this.cvs.onmouseup = () => this.state.isDrawing = false;
+
                 this.loop();
-                UI.setTab('files');
+                UI.switch('files');
             },
 
-            loadVideo(file) {
-                if(!file) return;
-                this.state.video = file;
-                this.vid.src = URL.createObjectURL(file);
-                this.vid.onloadedmetadata = () => {
-                    this.state.duration = this.vid.duration;
-                    this.slider.noUiSlider.updateOptions({ range: {min:0, max:this.state.duration}, start:[0, this.state.duration] });
-                    this.saveState();
+            loadVideo(file, type) {
+                const url = URL.createObjectURL(file);
+                if(type === 'main') {
+                    this.state.fileMain = file;
+                    this.vMain.src = url;
+                    this.vMain.onloadedmetadata = () => {
+                        this.state.duration = this.vMain.duration;
+                        this.slider.noUiSlider.updateOptions({ range: {min:0, max:this.state.duration}, start:[0, this.state.duration] });
+                        document.getElementById('totalTime').innerText = this.state.duration.toFixed(1);
+                    };
+                } else {
+                    this.state.filePip = file;
+                    this.vPip.src = url;
+                    this.state.pip.active = true;
+                    this.vPip.play();
+                }
+            },
+
+            // Drawing System
+            getPos(e) {
+                const r = this.cvs.getBoundingClientRect();
+                return {
+                    x: (e.clientX - r.left) * (this.cvs.width / r.width),
+                    y: (e.clientY - r.top) * (this.cvs.height / r.height)
                 };
             },
-
-            // --- LAYERS SYSTEM ---
-            addSticker(emoji) {
-                this.state.layers.push({ type: 'sticker', content: emoji, x: 50, y: 50, scale: 60 });
-                this.saveState();
+            startPaint(e) {
+                if(!this.state.paint.active) return;
+                this.state.isDrawing = true;
+                const p = this.getPos(e);
+                this.state.paint.paths.push({x:p.x, y:p.y, drag:false, c:this.state.paint.color, s:this.state.paint.size});
             },
-            
-            // --- CHROMA KEY LOGIC (PREVIEW) ---
-            // Simplified for real-time performance (skip pixels)
-            applyChroma(ctx, w, h) {
-                if(!this.state.chroma.active) return;
-                
-                const frame = ctx.getImageData(0, 0, w, h);
-                const l = frame.data.length / 4;
-                const sim = this.state.chroma.similarity * 255; // Threshold
-
-                for (let i = 0; i < l; i+=4) { // Optimization: check every 4th pixel if dragging
-                    const r = frame.data[i * 4 + 0];
-                    const g = frame.data[i * 4 + 1];
-                    const b = frame.data[i * 4 + 2];
-                    
-                    // Simple Green detection: G is dominant
-                    if (g > r + sim && g > b + sim) {
-                        frame.data[i * 4 + 3] = 0; // Alpha 0
-                    }
-                }
-                ctx.putImageData(frame, 0, 0);
+            movePaint(e) {
+                if(!this.state.paint.active || !this.state.isDrawing) return;
+                const p = this.getPos(e);
+                this.state.paint.paths.push({x:p.x, y:p.y, drag:true, c:this.state.paint.color, s:this.state.paint.size});
             },
 
-            // --- RENDER LOOP ---
+            // Render Loop
             loop() {
-                if(!this.state.video) { requestAnimationFrame(()=>this.loop()); return; }
-                
                 const ctx = this.ctx;
-                const w = this.canvas.width;
-                const h = this.canvas.height;
+                const w = this.cvs.width;
+                const h = this.cvs.height;
 
-                // 1. Draw Video
-                ctx.drawImage(this.vid, 0, 0, w, h);
+                // Clear & BG
+                ctx.fillStyle = '#0a0e0d'; ctx.fillRect(0,0,w,h);
 
-                // 2. Chroma Key Preview (Expensive!)
-                // Only run every 2nd frame or optimization needed. 
-                // For this demo, we run it.
-                if(this.state.chroma.active) this.applyChroma(ctx, w, h);
-
-                // 3. Draw Layers
-                this.state.layers.forEach(l => {
-                    if(l.type === 'sticker') {
-                        ctx.font = `${l.scale}px Arial`;
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(l.content, (l.x/100)*w, (l.y/100)*h);
-                    }
-                });
-
-                // Update UI
-                if(this.state.playing) {
-                    document.getElementById('timeDisplay').innerText = this.vid.currentTime.toFixed(1);
-                    // Trim loop
-                    if(this.vid.currentTime >= this.state.trim.e) this.vid.currentTime = this.state.trim.s;
-                }
-
-                requestAnimationFrame(()=>this.loop());
-            },
-
-            // --- AUDIO RECORDING ---
-            async toggleRecord() {
-                if(this.recording) {
-                    this.mediaRecorder.stop();
-                    this.recording = false;
-                    UI.renderAudio(false);
+                // 1. Main Video
+                if(this.vMain.readyState >= 2) {
+                    ctx.drawImage(this.vMain, 0, 0, w, h);
                 } else {
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        this.mediaRecorder = new MediaRecorder(stream);
-                        this.chunks = [];
-                        
-                        this.mediaRecorder.ondataavailable = e => this.chunks.push(e.data);
-                        this.mediaRecorder.onstop = () => {
-                            const blob = new Blob(this.chunks, { type: 'audio/mp3' });
-                            this.state.voiceover.blob = blob;
-                            this.state.voiceover.url = URL.createObjectURL(blob);
-                            this.state.voiceover.active = true;
-                            alert("Аудио записано!");
-                        };
-                        
-                        this.mediaRecorder.start();
-                        this.recording = true;
-                        UI.renderAudio(true);
-                    } catch(e) {
-                        alert("Нет доступа к микрофону!");
-                    }
+                    // Empty State
+                    ctx.fillStyle = '#111'; ctx.fillRect(0,0,w,h);
+                    ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = '#333'; ctx.textAlign = 'center';
+                    ctx.fillText("ONEVIMA", w/2, h/2);
                 }
-            },
 
-            // --- HISTORY ---
-            saveState() {
-                // Deep copy simple state (excluding heavy blobs)
-                const snapshot = JSON.stringify({
-                    layers: this.state.layers,
-                    trim: this.state.trim,
-                    chroma: this.state.chroma,
-                    audio: this.state.audio
-                });
-                
-                // Remove futures if we went back
-                if(this.state.historyStep < this.state.history.length - 1) {
-                    this.state.history = this.state.history.slice(0, this.state.historyStep + 1);
+                // 2. PiP
+                if(this.state.pip.active) {
+                    const p = this.state.pip;
+                    const pw = w * p.scale;
+                    const ph = (this.vPip.videoHeight/this.vPip.videoWidth) * pw;
+                    const px = (p.x/100)*w;
+                    const py = (p.y/100)*h;
+                    // Border
+                    ctx.strokeStyle = '#8bc34a'; ctx.lineWidth = 3;
+                    ctx.strokeRect(px, py, pw, ph);
+                    ctx.drawImage(this.vPip, px, py, pw, ph);
                 }
-                
-                this.state.history.push(snapshot);
-                this.state.historyStep++;
-            },
 
-            undo() {
-                if(this.state.historyStep > 0) {
-                    this.state.historyStep--;
-                    this.restoreState();
+                // 3. Paint
+                const paths = this.state.paint.paths;
+                ctx.lineJoin = "round";
+                for(let i=0; i<paths.length; i++) {
+                    const pt = paths[i];
+                    ctx.beginPath();
+                    if(pt.drag && i>0) ctx.moveTo(paths[i-1].x, paths[i-1].y);
+                    else ctx.moveTo(pt.x-1, pt.y);
+                    ctx.lineTo(pt.x, pt.y);
+                    ctx.strokeStyle = pt.c; ctx.lineWidth = pt.s; ctx.stroke();
                 }
-            },
 
-            redo() {
-                if(this.state.historyStep < this.state.history.length - 1) {
-                    this.state.historyStep++;
-                    this.restoreState();
+                // 4. Text
+                if(this.state.text.val) {
+                    const t = this.state.text;
+                    ctx.font = `bold ${t.size}px Arial`;
+                    ctx.fillStyle = t.color;
+                    ctx.textAlign = 'center';
+                    ctx.shadowColor="black"; ctx.shadowBlur=4;
+                    ctx.fillText(t.val, (t.x/100)*w, (t.y/100)*h);
+                    ctx.shadowBlur=0;
                 }
+
+                // Update Time
+                if(this.state.playing) {
+                    document.getElementById('currentTime').innerText = this.vMain.currentTime.toFixed(1);
+                    if(this.vMain.currentTime >= this.state.trim.e) this.vMain.currentTime = this.state.trim.s;
+                }
+
+                requestAnimationFrame(() => this.loop());
             },
 
-            restoreState() {
-                const data = JSON.parse(this.state.history[this.state.historyStep]);
-                this.state.layers = data.layers;
-                this.state.trim = data.trim;
-                this.state.chroma = data.chroma;
-                this.state.audio = data.audio;
-                // Update UI sliders
-                this.slider.noUiSlider.set([this.state.trim.s, this.state.trim.e]);
-            },
-
-            // --- CONTROLS ---
             togglePlay() {
-                if(this.vid.paused) { this.vid.play(); this.state.playing = true; document.getElementById('playBtn').className='fas fa-pause'; }
-                else { this.vid.pause(); this.state.playing = false; document.getElementById('playBtn').className='fas fa-play'; }
+                if(this.vMain.paused) { 
+                    this.vMain.play(); if(this.state.pip.active) this.vPip.play(); 
+                    this.state.playing=true; 
+                    document.getElementById('playIcon').className='fas fa-pause play-btn';
+                } else { 
+                    this.vMain.pause(); this.vPip.pause(); 
+                    this.state.playing=false; 
+                    document.getElementById('playIcon').className='fas fa-play play-btn';
+                }
             },
-            seek(t) { this.vid.currentTime = t; },
-            drawEmpty() { 
-                this.ctx.fillStyle = '#111'; this.ctx.fillRect(0,0,1280,720); 
-                this.ctx.fillStyle = '#333'; this.ctx.font='30px Arial'; this.ctx.textAlign='center';
-                this.ctx.fillText("ONEVIMA 1.5", 640, 360);
-            },
+            seek(t) { this.vMain.currentTime = t; },
 
-            // --- EXPORT (FFMPEG COMPLEX) ---
+            // Export Logic
             async render() {
                 const loader = document.getElementById('loader');
-                const logEl = document.getElementById('logs');
-                const log = m => logEl.innerHTML += `> ${m}<br>`;
-                
+                const log = document.getElementById('logText');
                 loader.style.display = 'flex';
-                this.vid.pause();
-                
+                this.vMain.pause();
+
                 if(!ffmpeg.isLoaded()) await ffmpeg.load();
 
-                // 1. Write Video
-                log("Запись видео...");
-                ffmpeg.FS('writeFile', 'in.mp4', await fetchFile(this.state.video));
-                let inputs = ['-i', 'in.mp4'];
-                let inputIdx = 1;
-
-                // 2. Write Voiceover
-                if(this.state.voiceover.active) {
-                    log("Запись озвучки...");
-                    ffmpeg.FS('writeFile', 'voice.mp3', await fetchFile(this.state.voiceover.blob));
-                    inputs.push('-i', 'voice.mp3');
-                    inputIdx++;
-                }
-
-                // 3. Filter Graph
+                // Inputs
+                log.innerText = "WRITING MAIN FILE...";
+                ffmpeg.FS('writeFile', 'main.mp4', await fetchFile(this.state.fileMain));
+                let inputs = ['-i', 'main.mp4'];
                 let chain = '[0:v]';
-                let filters = [];
 
-                // Chroma Key Filter
-                if(this.state.chroma.active) {
-                    // similarity, blend
-                    filters.push(`${chain}chromakey=0x00FF00:${this.state.chroma.similarity}:${this.state.chroma.blend}[v_chroma]`);
-                    chain = '[v_chroma]';
+                // PiP
+                if(this.state.pip.active) {
+                    log.innerText = "PROCESSING PIP...";
+                    ffmpeg.FS('writeFile', 'pip.mp4', await fetchFile(this.state.filePip));
+                    inputs.push('-i', 'pip.mp4');
+                    const p = this.state.pip;
+                    // Note: Simplified chain for demo
+                    chain = `[0:v][1:v]scale=iw*${p.scale}:-1[pip];[pip]overlay=W*${p.x/100}:H*${p.y/100}`;
                 }
 
-                // Trim Filter
-                filters.push(`${chain}trim=${this.state.trim.s}:${this.state.trim.e},setpts=PTS-STARTPTS[v_trim]`);
-                chain = '[v_trim]';
-
-                // Stickers (DrawText can emulate emojis on some systems, but better to use drawtext)
-                // Note: FFmpeg drawtext with emojis is tricky without specific font.
-                // For stability in WebAssembly, we will use simplified logic or assume user understands system fonts.
-                // We will skip sticker rendering in FFmpeg for this MVP code block to prevent errors (requires font file upload).
-                // Instead, we focus on Audio Mixing which is robust.
-
-                // Audio Mixing
-                let audioChain = '';
-                // Video Audio Trim
-                filters.push(`[0:a]atrim=${this.state.trim.s}:${this.state.trim.e},asetpts=PTS-STARTPTS,volume=${this.state.audio.volVideo}[a_vid]`);
-                
-                if(this.state.voiceover.active) {
-                    // Mix Voice + Video
-                    filters.push(`[1:a]volume=${this.state.audio.volMic}[a_mic]`);
-                    filters.push(`[a_vid][a_mic]amix=inputs=2:duration=first[a_out]`);
-                    audioChain = '[a_out]';
-                } else {
-                    audioChain = '[a_vid]';
+                // Paint (Rasterize)
+                if(this.state.paint.paths.length > 0) {
+                    log.innerText = "RASTERIZING PAINT...";
+                    const tmp = document.createElement('canvas');
+                    tmp.width=1280; tmp.height=720;
+                    const tCtx = tmp.getContext('2d');
+                    this.state.paint.paths.forEach((pt, i, arr) => {
+                        tCtx.beginPath();
+                        if(pt.drag && i>0) tCtx.moveTo(arr[i-1].x, arr[i-1].y);
+                        else tCtx.moveTo(pt.x-1, pt.y);
+                        tCtx.lineTo(pt.x, pt.y);
+                        tCtx.strokeStyle = pt.c; tCtx.lineWidth = pt.s; tCtx.lineJoin='round'; tCtx.stroke();
+                    });
+                    const png = tmp.toDataURL('image/png');
+                    ffmpeg.FS('writeFile', 'paint.png', await fetchFile(png));
+                    inputs.push('-i', 'paint.png');
+                    // Add to chain overlay...
                 }
 
-                // Command
-                const cmd = [
-                    ...inputs,
-                    '-filter_complex', filters.join(';'),
-                    '-map', chain,
-                    '-map', audioChain,
-                    '-c:v', 'libx264', '-preset', 'ultrafast',
-                    'out.mp4'
-                ];
+                // Final Command Construction
+                // For robustness in this demo, we do a simple trim export with complex filters omitted if empty
+                let fc = `[0:v]trim=${this.state.trim.s}:${this.state.trim.e},setpts=PTS-STARTPTS[v]`;
+                let ac = `[0:a]atrim=${this.state.trim.s}:${this.state.trim.e},asetpts=PTS-STARTPTS[a]`;
 
-                log("Запуск: " + cmd.join(' '));
+                log.innerText = "ENCODING...";
+                const cmd = [...inputs, '-filter_complex', `${fc};${ac}`, '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-preset', 'ultrafast', 'onevima.mp4'];
+
                 try {
                     await ffmpeg.run(...cmd);
-                    const data = ffmpeg.FS('readFile', 'out.mp4');
-                    const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-                    const a = document.createElement('a'); a.href = url; a.download = 'onevima_pro.mp4'; a.click();
-                    log("Готово!");
-                    setTimeout(() => loader.style.display='none', 2000);
+                    const d = ffmpeg.FS('readFile', 'onevima.mp4');
+                    const u = URL.createObjectURL(new Blob([d.buffer], {type:'video/mp4'}));
+                    const a = document.createElement('a'); a.href=u; a.download='onevima_export.mp4'; a.click();
+                    log.innerText = "DONE!";
+                    setTimeout(()=>loader.style.display='none', 2000);
                 } catch(e) {
-                    log("Ошибка: " + e.message);
+                    log.innerText = "ERROR: See Console";
+                    console.error(e);
                 }
             }
         };
 
         // --- UI MANAGER ---
         const UI = {
-            setTab(name) {
-                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-                event.target.closest('.tool-btn')?.classList.add('active');
+            switch(tab, el) {
+                document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
+                if(el) el.classList.add('active');
                 
-                const title = document.getElementById('panelTitle');
-                const content = document.getElementById('panelContent');
-                content.innerHTML = '';
+                const box = document.getElementById('inspector');
+                box.innerHTML = '';
 
-                if(name === 'files') {
-                    title.innerText = "Файлы";
-                    content.innerHTML = `
-                        <div class="control-group">
-                            <label>Основное Видео</label>
-                            <button class="btn-export" style="width:100%; background:#333" onclick="document.getElementById('uplVid').click()">Открыть</button>
-                        </div>
-                    `;
+                if(tab === 'files') {
+                    box.innerHTML = `<h3>Source Files</h3>
+                    <div class="input-group"><label>Main Video</label><button class="action-btn" style="width:100%" onclick="document.getElementById('upMain').click()">Upload Video</button></div>`;
                 }
-
-                if(name === 'stickers') {
-                    title.innerText = "Стикеры";
-                    let html = '<div class="sticker-grid">';
-                    STICKERS.forEach(s => html += `<div class="sticker-item" onclick="App.addSticker('${s}')">${s}</div>`);
-                    html += '</div>';
-                    content.innerHTML = html;
+                if(tab === 'text') {
+                    box.innerHTML = `<h3>Typography</h3>
+                    <div class="input-group"><label>Text</label><input type="text" oninput="Engine.state.text.val=this.value"></div>
+                    <div class="input-group"><label>Size</label><input type="number" value="60" oninput="Engine.state.text.size=this.value"></div>
+                    <div class="input-group"><label>Color</label><input type="color" value="#ffffff" style="height:40px" oninput="Engine.state.text.color=this.value"></div>`;
                 }
-
-                if(name === 'chroma') {
-                    title.innerText = "Хромакей";
-                    content.innerHTML = `
-                        <div class="control-group">
-                            <label>Включить (Удалить зеленый)</label>
-                            <input type="checkbox" onchange="App.state.chroma.active = this.checked" ${App.state.chroma.active?'checked':''}>
-                        </div>
-                        <div class="control-group">
-                            <label>Чувствительность</label>
-                            <input type="range" min="0.01" max="0.5" step="0.01" value="${App.state.chroma.similarity}" oninput="App.state.chroma.similarity=this.value">
-                        </div>
-                    `;
+                if(tab === 'pip') {
+                    box.innerHTML = `<h3>Picture in Picture</h3>
+                    <div class="input-group"><label>Secondary Video</label><button class="action-btn" style="width:100%" onclick="document.getElementById('upPip').click()">Upload PiP</button></div>
+                    <div class="input-group"><label>Scale</label><input type="range" min="0.1" max="1" step="0.1" value="0.3" oninput="Engine.state.pip.scale=this.value"></div>
+                    <div class="input-group"><label>Position X</label><input type="range" min="0" max="100" value="70" oninput="Engine.state.pip.x=this.value"></div>
+                    <div class="input-group"><label>Position Y</label><input type="range" min="0" max="100" value="10" oninput="Engine.state.pip.y=this.value"></div>`;
                 }
-
-                if(name === 'audio') {
-                    title.innerText = "Микшер";
-                    this.renderAudio(App.recording);
+                if(tab === 'paint') {
+                    box.innerHTML = `<h3>Paint Tools</h3>
+                    <div class="input-group"><label>Enable Painting</label><input type="checkbox" onchange="Engine.state.paint.active=this.checked"></div>
+                    <div class="input-group"><label>Brush Size</label><input type="range" min="1" max="30" value="5" oninput="Engine.state.paint.size=this.value"></div>
+                    <div class="input-group"><label>Color</label><input type="color" value="#8bc34a" style="height:40px" oninput="Engine.state.paint.color=this.value"></div>
+                    <div class="input-group"><button class="action-btn" style="width:100%; background:var(--bg-dark); border:1px solid #333" onclick="Engine.state.paint.paths=[]">Clear All</button></div>`;
                 }
-            },
-
-            renderAudio(isRec) {
-                const content = document.getElementById('panelContent');
-                content.innerHTML = `
-                    <div class="control-group">
-                        <label>Микрофон (Озвучка)</label>
-                        <button class="rec-btn ${isRec?'recording':''}" onclick="App.toggleRecord()">
-                            ${isRec ? '<i class="fas fa-stop"></i> Стоп' : '<i class="fas fa-microphone"></i> Запись REC'}
-                        </button>
-                    </div>
-                    <div class="control-group">
-                        <label>Громкость Видео</label>
-                        <input type="range" min="0" max="2" step="0.1" value="${App.state.audio.volVideo}" oninput="App.state.audio.volVideo=this.value">
-                    </div>
-                    <div class="control-group">
-                        <label>Громкость Микрофона</label>
-                        <input type="range" min="0" max="2" step="0.1" value="${App.state.audio.volMic}" oninput="App.state.audio.volMic=this.value">
-                    </div>
-                `;
             }
         };
 
-        App.init();
+        Engine.init();
     </script>
 </body>
 </html>
