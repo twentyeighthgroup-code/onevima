@@ -3,40 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onevima - Professional Editor</title>
+    <title>Onevima Studio - Professional editor</title>
     
-    <!-- Core Engine -->
+    <!-- Core: FFmpeg WASM -->
     <script src="coi-serviceworker.js"></script>
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
     
-    <!-- UI Libraries -->
+    <!-- UI: Icons, Fonts, Sliders -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.js"></script>
 
     <style>
         :root {
-            /* Palette based on your logo */
-            --bg-dark: #0a0e0d; /* Very dark teal-black */
-            --panel: #111816;
-            --border: #1f2b28;
-            
-            /* The Brand Gradient */
-            --brand-gradient: linear-gradient(135deg, #00897b 0%, #8bc34a 100%);
+            /* Brand Colors: Teal to Lime Gradient */
             --brand-primary: #00897b;
             --brand-secondary: #8bc34a;
+            --brand-gradient: linear-gradient(135deg, #00897b 0%, #8bc34a 100%);
             
-            --text-main: #ffffff;
-            --text-muted: #849690;
+            /* UI Colors */
+            --bg-body: #050606;
+            --bg-panel: #0f1312;
+            --border: #1f2b28;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+            --success: #10b981;
         }
 
         * { box-sizing: border-box; outline: none; user-select: none; }
         
         body {
-            background-color: var(--bg-dark);
+            background-color: var(--bg-body);
             color: var(--text-main);
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Manrope', sans-serif;
             margin: 0;
             height: 100vh;
             display: flex;
@@ -45,557 +46,702 @@
         }
 
         /* --- HEADER --- */
-        .header {
-            height: 70px;
-            background: var(--panel);
+        header {
+            height: 60px;
+            background: var(--bg-panel);
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 30px;
+            padding: 0 24px;
+            z-index: 20;
         }
 
-        .brand-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { 
+            width: 32px; height: 32px; 
+            background: var(--brand-gradient); 
+            border-radius: 8px; 
+            display: grid; place-items: center; color: white;
         }
-
-        /* Logo styling */
-        .app-logo {
-            height: 45px;
-            width: auto;
-            /* If image fails, we have a fallback shape */
-            background: var(--brand-gradient);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .logo-text { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
+        
+        .status-pill {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: #1e293b;
+            color: #94a3b8;
+            display: flex; gap: 8px; align-items: center;
         }
-        .app-logo img { height: 100%; width: auto; display: block; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
+        .status-dot.ready { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-dot.busy { background: #f59e0b; animation: pulse 1s infinite; }
 
-        .app-name {
-            font-weight: 800;
-            font-size: 1.4rem;
-            background: var(--brand-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
-        }
-
-        .action-btn {
+        .btn-primary {
             background: var(--brand-gradient);
             border: none;
             color: white;
-            padding: 10px 30px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 0.9rem;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 15px rgba(0, 137, 123, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            transition: 0.2s;
+            display: flex; align-items: center; gap: 8px;
         }
-        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139, 195, 74, 0.4); }
-        .action-btn:disabled { opacity: 0.5; cursor: wait; transform: none; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary:disabled { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; }
 
-        /* --- MAIN LAYOUT --- */
+        /* --- LAYOUT --- */
         .workspace { flex: 1; display: flex; overflow: hidden; }
 
-        /* Sidebar Tools */
+        /* Sidebar Navigation */
         .sidebar {
-            width: 80px;
-            background: var(--panel);
+            width: 72px;
+            background: var(--bg-panel);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-top: 20px;
-            gap: 15px;
-            z-index: 10;
+            padding-top: 16px;
+            gap: 8px;
         }
-
-        .tool {
-            width: 50px; height: 50px;
-            border-radius: 12px;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
+        .nav-item {
+            width: 48px; height: 48px;
+            border-radius: 10px;
+            display: grid; place-items: center;
             color: var(--text-muted);
             cursor: pointer;
-            transition: 0.3s;
-            font-size: 0.75rem;
-            gap: 5px;
-        }
-        .tool i { font-size: 1.2rem; }
-        .tool:hover { background: rgba(255,255,255,0.05); color: white; }
-        
-        /* Active State uses your gradient */
-        .tool.active {
-            background: var(--brand-gradient);
-            color: white;
-            box-shadow: 0 5px 15px rgba(0, 137, 123, 0.4);
-        }
-
-        /* Canvas Area */
-        .stage {
-            flex: 1;
-            background: radial-gradient(circle at center, #15201d 0%, var(--bg-dark) 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            transition: 0.2s;
             position: relative;
         }
-        
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .nav-item.active { background: rgba(0, 137, 123, 0.15); color: var(--brand-primary); }
+        .nav-item.active::after {
+            content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px;
+            background: var(--brand-primary); border-radius: 0 4px 4px 0;
+        }
+
+        /* Canvas Stage */
+        .stage {
+            flex: 1;
+            background: radial-gradient(circle at center, #0f1514 0%, #050606 100%);
+            display: grid; place-items: center;
+            position: relative;
+        }
         canvas {
-            max-width: 90%;
-            max-height: 80%;
-            border: 2px solid #2a3d38;
+            max-width: 90%; max-height: 85%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border: 1px solid #2a3533;
             border-radius: 4px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            background: #000;
         }
-
-        /* Timeline Area */
-        .bottom-panel {
-            height: 160px;
-            background: var(--panel);
-            border-top: 1px solid var(--border);
-            padding: 20px 40px;
-            display: flex;
-            flex-direction: column;
+        
+        .empty-state {
+            position: absolute; text-align: center; color: var(--text-muted); pointer-events: none;
         }
+        .empty-state i { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
 
-        .transport-controls {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-        }
-        .transport-controls i { cursor: pointer; color: var(--text-muted); transition: 0.2s; }
-        .transport-controls i:hover { color: var(--brand-secondary); }
-        .play-btn { color: white !important; transform: scale(1.2); }
-
-        /* Sliders Customization to match logo */
-        .noUi-connect { background: var(--brand-gradient); }
-        .noUi-handle {
-            background: white; border: none; box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            width: 18px; height: 18px; border-radius: 50%; right: -9px;
-        }
-
-        /* Inspector */
-        .properties {
+        /* Right Panel (Inspector) */
+        .inspector {
             width: 320px;
-            background: var(--panel);
+            background: var(--bg-panel);
             border-left: 1px solid var(--border);
-            padding: 25px;
-            overflow-y: auto;
+            display: flex; flex-direction: column;
         }
-
-        h3 {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--brand-primary); /* Teal text for headers */
-            margin-bottom: 20px;
+        .panel-header {
+            padding: 16px 20px;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
+            font-weight: 700; font-size: 0.9rem; letter-spacing: 0.5px;
+            text-transform: uppercase; color: var(--brand-secondary);
         }
+        .panel-body { padding: 20px; overflow-y: auto; flex: 1; }
 
-        .input-group { margin-bottom: 20px; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+        /* UI Controls */
+        .control-group { margin-bottom: 24px; }
+        label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
         
         input[type="text"], input[type="number"], select {
-            width: 100%;
-            background: #0a0e0d;
-            border: 1px solid var(--border);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-family: inherit;
+            width: 100%; background: #050606; border: 1px solid var(--border);
+            color: white; padding: 10px 12px; border-radius: 6px; font-family: inherit;
+            transition: border 0.2s;
         }
-        input[type="text"]:focus { border-color: var(--brand-secondary); }
+        input:focus { border-color: var(--brand-primary); }
         
-        input[type="range"] { width: 100%; accent-color: var(--brand-secondary); }
+        input[type="range"] { width: 100%; accent-color: var(--brand-primary); cursor: pointer; }
 
-        /* Loader */
+        .btn-outline {
+            width: 100%; padding: 10px; background: transparent;
+            border: 1px solid var(--border); color: var(--text-main);
+            border-radius: 6px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-outline:hover { border-color: var(--brand-primary); background: rgba(0,137,123,0.05); }
+
+        /* Timeline Footer */
+        footer {
+            height: 140px;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            padding: 0 40px;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        .timeline-controls {
+            display: flex; justify-content: center; gap: 32px; margin-bottom: 16px;
+            font-size: 1.5rem; color: var(--text-muted);
+        }
+        .timeline-controls i { cursor: pointer; transition: 0.2s; }
+        .timeline-controls i:hover { color: white; }
+        .play-icon { color: var(--text-main); transform: scale(1.2); }
+        .play-icon:hover { color: var(--brand-secondary); }
+
+        /* Overlay Loader */
         .loader-overlay {
-            position: absolute; inset: 0; background: rgba(10, 14, 13, 0.95); z-index: 1000;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
+            position: absolute; inset: 0; background: rgba(5,6,6,0.95);
+            z-index: 1000; display: none; flex-direction: column;
+            align-items: center; justify-content: center;
         }
-        .spinner {
-            width: 50px; height: 50px;
-            border: 4px solid rgba(255,255,255,0.1);
-            border-left-color: var(--brand-secondary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .progress-bar {
+            width: 300px; height: 6px; background: #1e293b; border-radius: 3px;
+            overflow: hidden; margin-top: 24px;
         }
-        @keyframes spin { to {transform: rotate(360deg);} }
+        .progress-fill { width: 0%; height: 100%; background: var(--brand-gradient); transition: width 0.3s; }
+        .log-terminal {
+            margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+            color: var(--text-muted); height: 20px;
+        }
 
-        /* Helpers */
-        input[type="file"] { display: none; }
-        video { display: none; }
-
+        /* Utilities */
+        .hidden { display: none !important; }
+        @keyframes pulse { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
-    <div class="header">
-        <div class="brand-container">
-            <!-- СЮДА ВСТАВЛЯЕТСЯ ЛОГОТИП -->
-            <div class="app-logo">
-                <img src="logo.png" alt="OV" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\'fas fa-video\' style=\'color:white; font-size:20px\'></i>'">
+    <header>
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-video"></i></div>
+            <div class="logo-text">Onevima</div>
+            <div class="status-pill">
+                <div class="status-dot" id="engineDot"></div>
+                <span id="engineStatus">Connecting Core...</span>
             </div>
-            <div class="app-name">ONEVIMA</div>
         </div>
-        <button class="action-btn" onclick="Engine.render()">
-            <i class="fas fa-bolt"></i> EXPORT VIDEO
+        <button class="btn-primary" id="exportBtn" onclick="Engine.exportVideo()" disabled>
+            <i class="fas fa-download"></i> EXPORT
         </button>
-    </div>
+    </header>
 
-    <!-- Main Workspace -->
     <div class="workspace">
-        
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="tool active" onclick="UI.switch('files', this)"><i class="fas fa-folder-open"></i>Files</div>
-            <div class="tool" onclick="UI.switch('pip', this)"><i class="fas fa-images"></i>PiP</div>
-            <div class="tool" onclick="UI.switch('paint', this)"><i class="fas fa-paint-brush"></i>Paint</div>
-            <div class="tool" onclick="UI.switch('text', this)"><i class="fas fa-font"></i>Text</div>
-            <div class="tool" onclick="UI.switch('chroma', this)"><i class="fas fa-magic"></i>FX</div>
-            <div class="tool" style="margin-top:auto; color:#ef4444" onclick="Recorder.toggle()"><i class="fas fa-record-vinyl"></i>REC</div>
-        </div>
+        <!-- NAV -->
+        <nav class="sidebar">
+            <div class="nav-item active" onclick="UI.switchTab('files', this)" title="Исходники"><i class="fas fa-folder-open"></i></div>
+            <div class="nav-item" onclick="UI.switchTab('pip', this)" title="Картинка в Картинке"><i class="fas fa-clone"></i></div>
+            <div class="nav-item" onclick="UI.switchTab('text', this)" title="Титры"><i class="fas fa-font"></i></div>
+            <div class="nav-item" onclick="UI.switchTab('paint', this)" title="Рисование"><i class="fas fa-paint-brush"></i></div>
+            <div class="nav-item" onclick="UI.switchTab('audio', this)" title="Звук"><i class="fas fa-volume-up"></i></div>
+        </nav>
 
-        <!-- Canvas Stage -->
-        <div class="stage">
-            <canvas id="mainCanvas"></canvas>
-            <div class="loader-overlay" id="loader">
-                <div class="spinner"></div>
-                <div style="margin-top:20px; color:var(--brand-secondary); font-family:monospace" id="logText">INITIALIZING...</div>
+        <!-- STAGE -->
+        <main class="stage">
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-film"></i>
+                <div>Загрузите видео, чтобы начать</div>
             </div>
-        </div>
+            <canvas id="mainCanvas"></canvas>
+        </main>
 
-        <!-- Right Inspector -->
-        <div class="properties" id="inspector">
-            <!-- Dynamic Content -->
-        </div>
-
+        <!-- INSPECTOR -->
+        <aside class="inspector">
+            <div class="panel-header" id="panelTitle">Файлы</div>
+            <div class="panel-body" id="panelContent">
+                <!-- Injected via JS -->
+            </div>
+        </aside>
     </div>
 
-    <!-- Timeline -->
-    <div class="bottom-panel">
-        <div class="transport-controls">
+    <!-- TIMELINE -->
+    <footer>
+        <div class="timeline-controls">
             <i class="fas fa-backward" onclick="Engine.seek(0)"></i>
-            <i class="fas fa-play play-btn" id="playIcon" onclick="Engine.togglePlay()"></i>
+            <i class="fas fa-play play-icon" id="playBtn" onclick="Engine.togglePlay()"></i>
         </div>
-        <div id="timelineSlider"></div>
-        <div style="text-align:center; margin-top:10px; font-size:0.8rem; color:var(--text-muted)">
+        <div id="slider"></div>
+        <div style="text-align: center; margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">
             <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
         </div>
+    </footer>
+
+    <!-- LOADER -->
+    <div class="loader-overlay" id="loader">
+        <h2 style="font-weight: 800; letter-spacing: -1px;">RENDERING</h2>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="log-terminal" id="logText">Preparing...</div>
     </div>
 
-    <!-- Hidden Elements -->
-    <video id="vMain" crossorigin="anonymous"></video>
-    <video id="vPip" crossorigin="anonymous" loop muted></video>
-    <input type="file" id="upMain" accept="video/*">
-    <input type="file" id="upPip" accept="video/*">
+    <!-- HIDDEN SOURCES -->
+    <input type="file" id="uplMain" accept="video/*">
+    <input type="file" id="uplPip" accept="video/*">
+    <video id="vMain" crossorigin="anonymous" playsinline></video>
+    <video id="vPip" crossorigin="anonymous" playsinline loop muted></video>
 
     <script>
         const { createFFmpeg, fetchFile } = FFmpeg;
-        const ffmpeg = createFFmpeg({ log: true });
-
-        // --- SCREEN RECORDER ---
-        const Recorder = {
-            active: false,
-            mediaRecorder: null,
-            chunks: [],
-            async toggle() {
-                if(this.active) {
-                    this.mediaRecorder.stop();
-                } else {
-                    try {
-                        const stream = await navigator.mediaDevices.getDisplayMedia({video:true, audio:true});
-                        this.mediaRecorder = new MediaRecorder(stream);
-                        this.chunks = [];
-                        this.mediaRecorder.ondataavailable = e => this.chunks.push(e.data);
-                        this.mediaRecorder.onstop = () => {
-                            const blob = new Blob(this.chunks, {type:'video/mp4'});
-                            const file = new File([blob], "rec.mp4", {type:"video/mp4"});
-                            Engine.loadVideo(file, 'main');
-                            this.active = false;
-                            alert("Запись завершена и добавлена!");
-                        };
-                        this.mediaRecorder.start();
-                        this.active = true;
-                    } catch(e) { console.error(e); }
-                }
-            }
+        
+        // --- APP STATE STORE ---
+        const State = {
+            videoLoaded: false,
+            duration: 0,
+            playing: false,
+            trim: { s: 0, e: 0 },
+            
+            // Features
+            pip: { active: false, scale: 0.3, x: 70, y: 10, file: null },
+            text: { active: false, content: '', x: 50, y: 50, size: 60, color: '#ffffff' },
+            paint: { active: false, paths: [], isDrawing: false, color: '#8bc34a', size: 5 },
+            audio: { volVideo: 1, volPip: 0 },
+            
+            // System
+            ffmpegLoaded: false
         };
+
+        const ffmpeg = createFFmpeg({
+            log: true,
+            progress: ({ ratio }) => {
+                // Not always reliable for encode, using log parsing mostly, 
+                // but this helps if available
+            }
+        });
 
         // --- CORE ENGINE ---
         const Engine = {
-            state: {
-                playing: false,
-                duration: 0,
-                trim: { s: 0, e: 0 },
-                pip: { active: false, x: 70, y: 10, scale: 0.3 },
-                text: { val: '', x: 50, y: 50, size: 60, color: '#ffffff' },
-                paint: { active: false, color: '#8bc34a', size: 5, paths: [] },
-                chroma: { active: false, sim: 0.1 },
-                isDrawing: false
-            },
-            
             cvs: document.getElementById('mainCanvas'),
             ctx: document.getElementById('mainCanvas').getContext('2d'),
             vMain: document.getElementById('vMain'),
             vPip: document.getElementById('vPip'),
 
-            init() {
+            async init() {
+                // UI Init
                 this.cvs.width = 1280;
                 this.cvs.height = 720;
                 
-                // Timeline
-                this.slider = document.getElementById('timelineSlider');
+                // Slider
+                this.slider = document.getElementById('slider');
                 noUiSlider.create(this.slider, { start: [0, 100], connect: true, range: { min: 0, max: 100 } });
-                this.slider.noUiSlider.on('update', v => {
-                    this.state.trim.s = parseFloat(v[0]);
-                    this.state.trim.e = parseFloat(v[1]);
+                this.slider.noUiSlider.on('slide', (v) => {
+                    State.trim.s = parseFloat(v[0]);
+                    State.trim.e = parseFloat(v[1]);
                 });
 
-                // Events
-                document.getElementById('upMain').onchange = e => this.loadVideo(e.target.files[0], 'main');
-                document.getElementById('upPip').onchange = e => this.loadVideo(e.target.files[0], 'pip');
+                // Listeners
+                document.getElementById('uplMain').onchange = e => this.loadVideo(e.target.files[0], 'main');
+                document.getElementById('uplPip').onchange = e => this.loadVideo(e.target.files[0], 'pip');
+                
+                // Canvas Inputs
+                this.cvs.onmousedown = e => this.paintStart(e);
+                this.cvs.onmousemove = e => this.paintMove(e);
+                this.cvs.onmouseup = () => State.paint.isDrawing = false;
 
-                // Painting
-                this.cvs.onmousedown = e => this.startPaint(e);
-                this.cvs.onmousemove = e => this.movePaint(e);
-                this.cvs.onmouseup = () => this.state.isDrawing = false;
+                UI.switchTab('files');
+                
+                // Load Core
+                try {
+                    UI.setStatus('loading');
+                    await ffmpeg.load();
+                    State.ffmpegLoaded = true;
+                    UI.setStatus('ready');
+                } catch(e) {
+                    UI.setStatus('error');
+                    console.error("FFmpeg Load Error: ", e);
+                    alert("Ошибка загрузки ядра. Проверьте coi-serviceworker.js");
+                }
 
-                this.loop();
-                UI.switch('files');
+                this.renderLoop();
             },
 
             loadVideo(file, type) {
+                if(!file) return;
                 const url = URL.createObjectURL(file);
+                
                 if(type === 'main') {
-                    this.state.fileMain = file;
                     this.vMain.src = url;
                     this.vMain.onloadedmetadata = () => {
-                        this.state.duration = this.vMain.duration;
-                        this.slider.noUiSlider.updateOptions({ range: {min:0, max:this.state.duration}, start:[0, this.state.duration] });
-                        document.getElementById('totalTime').innerText = this.state.duration.toFixed(1);
+                        State.duration = this.vMain.duration;
+                        State.videoLoaded = true;
+                        State.trim.e = State.duration;
+                        
+                        this.slider.noUiSlider.updateOptions({
+                            range: { min: 0, max: State.duration },
+                            start: [0, State.duration]
+                        });
+                        
+                        document.getElementById('totalTime').innerText = this.fmtTime(State.duration);
+                        document.getElementById('emptyState').classList.add('hidden');
+                        document.getElementById('exportBtn').disabled = false;
                     };
                 } else {
-                    this.state.filePip = file;
+                    State.pip.file = file;
                     this.vPip.src = url;
-                    this.state.pip.active = true;
+                    State.pip.active = true;
                     this.vPip.play();
                 }
             },
 
-            // Drawing System
-            getPos(e) {
-                const r = this.cvs.getBoundingClientRect();
-                return {
-                    x: (e.clientX - r.left) * (this.cvs.width / r.width),
-                    y: (e.clientY - r.top) * (this.cvs.height / r.height)
-                };
-            },
-            startPaint(e) {
-                if(!this.state.paint.active) return;
-                this.state.isDrawing = true;
-                const p = this.getPos(e);
-                this.state.paint.paths.push({x:p.x, y:p.y, drag:false, c:this.state.paint.color, s:this.state.paint.size});
-            },
-            movePaint(e) {
-                if(!this.state.paint.active || !this.state.isDrawing) return;
-                const p = this.getPos(e);
-                this.state.paint.paths.push({x:p.x, y:p.y, drag:true, c:this.state.paint.color, s:this.state.paint.size});
-            },
-
-            // Render Loop
-            loop() {
+            // --- RENDER LOOP (60 FPS) ---
+            renderLoop() {
+                requestAnimationFrame(() => this.renderLoop());
+                
                 const ctx = this.ctx;
                 const w = this.cvs.width;
                 const h = this.cvs.height;
 
-                // Clear & BG
-                ctx.fillStyle = '#0a0e0d'; ctx.fillRect(0,0,w,h);
+                // 1. Clear
+                ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
 
-                // 1. Main Video
-                if(this.vMain.readyState >= 2) {
-                    ctx.drawImage(this.vMain, 0, 0, w, h);
-                } else {
-                    // Empty State
-                    ctx.fillStyle = '#111'; ctx.fillRect(0,0,w,h);
-                    ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = '#333'; ctx.textAlign = 'center';
-                    ctx.fillText("ONEVIMA", w/2, h/2);
-                }
+                if(!State.videoLoaded) return;
 
-                // 2. PiP
-                if(this.state.pip.active) {
-                    const p = this.state.pip;
+                // 2. Main Video
+                ctx.drawImage(this.vMain, 0, 0, w, h);
+
+                // 3. PiP
+                if(State.pip.active) {
+                    const p = State.pip;
                     const pw = w * p.scale;
-                    const ph = (this.vPip.videoHeight/this.vPip.videoWidth) * pw;
+                    const ph = (this.vPip.videoHeight / this.vPip.videoWidth) * pw;
                     const px = (p.x/100)*w;
                     const py = (p.y/100)*h;
-                    // Border
-                    ctx.strokeStyle = '#8bc34a'; ctx.lineWidth = 3;
+                    
+                    ctx.save();
+                    ctx.strokeStyle = '#8bc34a'; ctx.lineWidth = 4;
                     ctx.strokeRect(px, py, pw, ph);
                     ctx.drawImage(this.vPip, px, py, pw, ph);
+                    ctx.restore();
                 }
 
-                // 3. Paint
-                const paths = this.state.paint.paths;
-                ctx.lineJoin = "round";
-                for(let i=0; i<paths.length; i++) {
-                    const pt = paths[i];
-                    ctx.beginPath();
-                    if(pt.drag && i>0) ctx.moveTo(paths[i-1].x, paths[i-1].y);
-                    else ctx.moveTo(pt.x-1, pt.y);
-                    ctx.lineTo(pt.x, pt.y);
-                    ctx.strokeStyle = pt.c; ctx.lineWidth = pt.s; ctx.stroke();
+                // 4. Paint
+                const paths = State.paint.paths;
+                if(paths.length > 0) {
+                    ctx.lineCap = "round"; ctx.lineJoin = "round";
+                    for(let i=0; i < paths.length; i++) {
+                        const pt = paths[i];
+                        ctx.beginPath();
+                        if(pt.drag && i>0) ctx.moveTo(paths[i-1].x, paths[i-1].y);
+                        else ctx.moveTo(pt.x-1, pt.y);
+                        ctx.lineTo(pt.x, pt.y);
+                        ctx.strokeStyle = pt.c; ctx.lineWidth = pt.s; ctx.stroke();
+                    }
                 }
 
-                // 4. Text
-                if(this.state.text.val) {
-                    const t = this.state.text;
+                // 5. Text
+                if(State.text.content) {
+                    const t = State.text;
                     ctx.font = `bold ${t.size}px Arial`;
                     ctx.fillStyle = t.color;
                     ctx.textAlign = 'center';
                     ctx.shadowColor="black"; ctx.shadowBlur=4;
-                    ctx.fillText(t.val, (t.x/100)*w, (t.y/100)*h);
+                    ctx.fillText(t.content, (t.x/100)*w, (t.y/100)*h);
                     ctx.shadowBlur=0;
                 }
 
-                // Update Time
-                if(this.state.playing) {
-                    document.getElementById('currentTime').innerText = this.vMain.currentTime.toFixed(1);
-                    if(this.vMain.currentTime >= this.state.trim.e) this.vMain.currentTime = this.state.trim.s;
+                // Logic
+                if(State.playing) {
+                    document.getElementById('currentTime').innerText = this.fmtTime(this.vMain.currentTime);
+                    if(this.vMain.currentTime >= State.trim.e) {
+                        this.vMain.currentTime = State.trim.s;
+                    }
                 }
+            },
 
-                requestAnimationFrame(() => this.loop());
+            // --- PAINT LOGIC ---
+            paintStart(e) {
+                if(!State.paint.active) return;
+                State.paint.isDrawing = true;
+                this.paintRecord(e, false);
+            },
+            paintMove(e) {
+                if(!State.paint.active || !State.paint.isDrawing) return;
+                this.paintRecord(e, true);
+            },
+            paintRecord(e, drag) {
+                const r = this.cvs.getBoundingClientRect();
+                const x = (e.clientX - r.left) * (this.cvs.width / r.width);
+                const y = (e.clientY - r.top) * (this.cvs.height / r.height);
+                State.paint.paths.push({ x, y, drag, c: State.paint.color, s: State.paint.size });
+            },
+
+            // --- EXPORT PIPELINE (FFMPEG) ---
+            async exportVideo() {
+                if(!State.ffmpegLoaded) return alert("Ядро еще загружается...");
+                
+                UI.toggleLoader(true);
+                UI.log("Загрузка файлов в память...");
+                
+                this.vMain.pause(); this.vPip.pause();
+                
+                try {
+                    // 1. Files
+                    ffmpeg.FS('writeFile', 'main.mp4', await fetchFile(this.vMain.src));
+                    let inputs = ['-i', 'main.mp4'];
+                    let filterChain = [];
+                    let lastVidStream = '0:v';
+                    let inputCount = 1;
+
+                    // 2. PiP Input
+                    if(State.pip.active) {
+                        UI.log("Обработка PiP...");
+                        ffmpeg.FS('writeFile', 'pip.mp4', await fetchFile(State.pip.file));
+                        inputs.push('-i', 'pip.mp4');
+                        const p = State.pip;
+                        // Scale PiP
+                        filterChain.push(`[1:v]scale=iw*${p.scale}:-1[pip]`);
+                        // Overlay
+                        filterChain.push(`[${lastVidStream}][pip]overlay=W*${p.x/100}:H*${p.y/100}[v_pip]`);
+                        lastVidStream = 'v_pip';
+                        inputCount++;
+                    }
+
+                    // 3. Paint Rasterization
+                    if(State.paint.paths.length > 0) {
+                        UI.log("Генерация рисунков...");
+                        // Create temp canvas
+                        const tCvs = document.createElement('canvas');
+                        tCvs.width = 1280; tCvs.height = 720;
+                        const tCtx = tCvs.getContext('2d');
+                        // Redraw
+                        State.paint.paths.forEach((pt, i, arr) => {
+                            tCtx.beginPath();
+                            if(pt.drag && i>0) tCtx.moveTo(arr[i-1].x, arr[i-1].y);
+                            else tCtx.moveTo(pt.x-1, pt.y);
+                            tCtx.lineTo(pt.x, pt.y);
+                            tCtx.strokeStyle = pt.c; tCtx.lineWidth = pt.s; tCtx.lineJoin='round'; tCtx.stroke();
+                        });
+                        const png = tCvs.toDataURL('image/png');
+                        ffmpeg.FS('writeFile', 'paint.png', await fetchFile(png));
+                        inputs.push('-i', 'paint.png');
+                        
+                        filterChain.push(`[${lastVidStream}][${inputCount}:v]overlay=0:0[v_paint]`);
+                        lastVidStream = 'v_paint';
+                        inputCount++;
+                    }
+
+                    // 4. Text
+                    if(State.text.content) {
+                         UI.log("Скачивание шрифта...");
+                         const fontData = await fetch('https://cdn.jsdelivr.net/gh/google/fonts/apache/roboto/Roboto-Bold.ttf').then(r=>r.arrayBuffer());
+                         ffmpeg.FS('writeFile', 'font.ttf', new Uint8Array(fontData));
+                         const t = State.text;
+                         const safeTxt = t.content.replace(/:/g, "\\:");
+                         
+                         // Note: We use the bracket syntax for streams correctly
+                         const prev = filterChain.length > 0 ? `[${lastVidStream}]` : `[${lastVidStream}]`; 
+                         // Actually, inside filter_complex, we define stream names.
+                         
+                         // Let's refine the chain logic for robustness:
+                         // Simple approach: append filters
+                         const drawText = `drawtext=fontfile=font.ttf:text='${safeTxt}':fontcolor=${t.color}:fontsize=${t.size}:x=(w*${t.x/100}):y=(h*${t.y/100})`;
+                         
+                         if (filterChain.length === 0) {
+                             // Direct filter on 0:v
+                             filterChain.push(`[0:v]${drawText}[v_text]`);
+                             lastVidStream = 'v_text';
+                         } else {
+                             // Append to last
+                             filterChain.push(`[${lastVidStream}]${drawText}[v_text]`);
+                             lastVidStream = 'v_text';
+                         }
+                    }
+
+                    // 5. Trim (Always last)
+                    filterChain.push(`[${lastVidStream}]trim=${State.trim.s}:${State.trim.e},setpts=PTS-STARTPTS[v_final]`);
+                    
+                    // Audio Trim
+                    let audioFilter = `[0:a]atrim=${State.trim.s}:${State.trim.e},asetpts=PTS-STARTPTS[a_final]`;
+
+                    // COMPILE COMMAND
+                    const complexFilter = `${filterChain.join(';')};${audioFilter}`;
+                    const cmd = [
+                        ...inputs,
+                        '-filter_complex', complexFilter,
+                        '-map', '[v_final]', 
+                        '-map', '[a_final]',
+                        '-c:v', 'libx264', 
+                        '-preset', 'ultrafast',
+                        'out.mp4'
+                    ];
+
+                    UI.log("Рендеринг (это может занять время)...");
+                    
+                    // Logger hack for progress bar
+                    ffmpeg.setLogger(({ message }) => {
+                        console.log(message);
+                        if(message.includes('time=')) {
+                            const timeMatch = message.match(/time=(\d{2}:\d{2}:\d{2}\.\d{2})/);
+                            if(timeMatch) {
+                                const t = timeMatch[1].split(':');
+                                const sec = (+t[0]) * 60 * 60 + (+t[1]) * 60 + (+t[2]);
+                                const pct = Math.min((sec / State.duration) * 100, 100);
+                                document.getElementById('progressFill').style.width = `${pct}%`;
+                            }
+                        }
+                    });
+
+                    await ffmpeg.run(...cmd);
+
+                    UI.log("Сохранение...");
+                    const data = ffmpeg.FS('readFile', 'out.mp4');
+                    const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+                    const a = document.createElement('a'); a.href = url; a.download = 'onevima_export.mp4'; a.click();
+
+                    UI.toggleLoader(false);
+                    
+                    // Garbage Collection
+                    ffmpeg.FS('unlink', 'main.mp4');
+                    try { ffmpeg.FS('unlink', 'out.mp4'); } catch(e){}
+
+                } catch(e) {
+                    console.error(e);
+                    UI.log("ОШИБКА: " + e.message);
+                    alert("Произошла ошибка при рендеринге. См. консоль.");
+                    UI.toggleLoader(false);
+                }
             },
 
             togglePlay() {
                 if(this.vMain.paused) { 
-                    this.vMain.play(); if(this.state.pip.active) this.vPip.play(); 
-                    this.state.playing=true; 
-                    document.getElementById('playIcon').className='fas fa-pause play-btn';
+                    this.vMain.play(); if(State.pip.active) this.vPip.play(); 
+                    State.playing = true; document.getElementById('playBtn').className='fas fa-pause play-icon'; 
                 } else { 
                     this.vMain.pause(); this.vPip.pause(); 
-                    this.state.playing=false; 
-                    document.getElementById('playIcon').className='fas fa-play play-btn';
+                    State.playing = false; document.getElementById('playBtn').className='fas fa-play play-icon'; 
                 }
             },
             seek(t) { this.vMain.currentTime = t; },
-
-            // Export Logic
-            async render() {
-                const loader = document.getElementById('loader');
-                const log = document.getElementById('logText');
-                loader.style.display = 'flex';
-                this.vMain.pause();
-
-                if(!ffmpeg.isLoaded()) await ffmpeg.load();
-
-                // Inputs
-                log.innerText = "WRITING MAIN FILE...";
-                ffmpeg.FS('writeFile', 'main.mp4', await fetchFile(this.state.fileMain));
-                let inputs = ['-i', 'main.mp4'];
-                let chain = '[0:v]';
-
-                // PiP
-                if(this.state.pip.active) {
-                    log.innerText = "PROCESSING PIP...";
-                    ffmpeg.FS('writeFile', 'pip.mp4', await fetchFile(this.state.filePip));
-                    inputs.push('-i', 'pip.mp4');
-                    const p = this.state.pip;
-                    // Note: Simplified chain for demo
-                    chain = `[0:v][1:v]scale=iw*${p.scale}:-1[pip];[pip]overlay=W*${p.x/100}:H*${p.y/100}`;
-                }
-
-                // Paint (Rasterize)
-                if(this.state.paint.paths.length > 0) {
-                    log.innerText = "RASTERIZING PAINT...";
-                    const tmp = document.createElement('canvas');
-                    tmp.width=1280; tmp.height=720;
-                    const tCtx = tmp.getContext('2d');
-                    this.state.paint.paths.forEach((pt, i, arr) => {
-                        tCtx.beginPath();
-                        if(pt.drag && i>0) tCtx.moveTo(arr[i-1].x, arr[i-1].y);
-                        else tCtx.moveTo(pt.x-1, pt.y);
-                        tCtx.lineTo(pt.x, pt.y);
-                        tCtx.strokeStyle = pt.c; tCtx.lineWidth = pt.s; tCtx.lineJoin='round'; tCtx.stroke();
-                    });
-                    const png = tmp.toDataURL('image/png');
-                    ffmpeg.FS('writeFile', 'paint.png', await fetchFile(png));
-                    inputs.push('-i', 'paint.png');
-                    // Add to chain overlay...
-                }
-
-                // Final Command Construction
-                // For robustness in this demo, we do a simple trim export with complex filters omitted if empty
-                let fc = `[0:v]trim=${this.state.trim.s}:${this.state.trim.e},setpts=PTS-STARTPTS[v]`;
-                let ac = `[0:a]atrim=${this.state.trim.s}:${this.state.trim.e},asetpts=PTS-STARTPTS[a]`;
-
-                log.innerText = "ENCODING...";
-                const cmd = [...inputs, '-filter_complex', `${fc};${ac}`, '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-preset', 'ultrafast', 'onevima.mp4'];
-
-                try {
-                    await ffmpeg.run(...cmd);
-                    const d = ffmpeg.FS('readFile', 'onevima.mp4');
-                    const u = URL.createObjectURL(new Blob([d.buffer], {type:'video/mp4'}));
-                    const a = document.createElement('a'); a.href=u; a.download='onevima_export.mp4'; a.click();
-                    log.innerText = "DONE!";
-                    setTimeout(()=>loader.style.display='none', 2000);
-                } catch(e) {
-                    log.innerText = "ERROR: See Console";
-                    console.error(e);
-                }
-            }
+            fmtTime(s) { return new Date(s * 1000).toISOString().substr(14, 5); }
         };
 
         // --- UI MANAGER ---
         const UI = {
-            switch(tab, el) {
-                document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
+            switchTab(name, el) {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 if(el) el.classList.add('active');
                 
-                const box = document.getElementById('inspector');
-                box.innerHTML = '';
+                const title = document.getElementById('panelTitle');
+                const content = document.getElementById('panelContent');
+                
+                if(name === 'files') {
+                    title.innerText = "Файлы Проекта";
+                    content.innerHTML = `
+                        <div class="control-group">
+                            <label>Основное Видео</label>
+                            <button class="btn-outline" onclick="document.getElementById('uplMain').click()">
+                                <i class="fas fa-upload"></i> Выбрать файл
+                            </button>
+                        </div>
+                    `;
+                }
+                else if(name === 'text') {
+                    title.innerText = "Текст и Титры";
+                    content.innerHTML = `
+                        <div class="control-group">
+                            <label>Текст</label>
+                            <input type="text" placeholder="Введите текст..." oninput="State.text.content = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label>Размер</label>
+                            <input type="number" value="60" oninput="State.text.size = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label>Цвет</label>
+                            <input type="color" value="#ffffff" style="height:40px" oninput="State.text.color = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label>Позиция X (%)</label>
+                            <input type="range" value="50" oninput="State.text.x = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label>Позиция Y (%)</label>
+                            <input type="range" value="50" oninput="State.text.y = this.value">
+                        </div>
+                    `;
+                }
+                else if(name === 'pip') {
+                    title.innerText = "Картинка в Картинке";
+                    content.innerHTML = `
+                        <div class="control-group">
+                            <label>Видео слой</label>
+                            <button class="btn-outline" onclick="document.getElementById('uplPip').click()">Загрузить PiP</button>
+                        </div>
+                        <div class="control-group">
+                            <label>Масштаб</label>
+                            <input type="range" min="0.1" max="1" step="0.1" value="0.3" oninput="State.pip.scale = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label>X</label>
+                            <input type="range" value="70" oninput="State.pip.x = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label>Y</label>
+                            <input type="range" value="10" oninput="State.pip.y = this.value">
+                        </div>
+                    `;
+                }
+                else if(name === 'paint') {
+                    title.innerText = "Кисть";
+                    content.innerHTML = `
+                        <div class="control-group">
+                            <label>Включить рисование</label>
+                            <input type="checkbox" onchange="State.paint.active = this.checked">
+                        </div>
+                        <div class="control-group">
+                            <label>Толщина</label>
+                            <input type="range" min="2" max="20" value="5" oninput="State.paint.size = this.value">
+                        </div>
+                        <div class="control-group">
+                            <label>Цвет</label>
+                            <input type="color" value="#8bc34a" style="height:40px" oninput="State.paint.color = this.value">
+                        </div>
+                        <button class="btn-outline" style="border-color:var(--danger); color:var(--danger)" onclick="State.paint.paths=[]">Очистить всё</button>
+                    `;
+                }
+                else if(name === 'audio') {
+                    title.innerText = "Аудио Микшер";
+                    content.innerHTML = `
+                        <div class="control-group">
+                            <label>Громкость Видео</label>
+                            <input type="range" min="0" max="2" step="0.1" value="1" disabled title="В разработке">
+                        </div>
+                    `;
+                }
+            },
 
-                if(tab === 'files') {
-                    box.innerHTML = `<h3>Source Files</h3>
-                    <div class="input-group"><label>Main Video</label><button class="action-btn" style="width:100%" onclick="document.getElementById('upMain').click()">Upload Video</button></div>`;
+            setStatus(status) {
+                const dot = document.getElementById('engineDot');
+                const txt = document.getElementById('engineStatus');
+                if(status === 'ready') {
+                    dot.className = 'status-dot ready';
+                    txt.innerText = 'Engine Ready';
+                } else if (status === 'error') {
+                    dot.className = 'status-dot';
+                    dot.style.background = 'red';
+                    txt.innerText = 'Error';
+                } else {
+                    dot.className = 'status-dot busy';
+                    txt.innerText = 'Loading...';
                 }
-                if(tab === 'text') {
-                    box.innerHTML = `<h3>Typography</h3>
-                    <div class="input-group"><label>Text</label><input type="text" oninput="Engine.state.text.val=this.value"></div>
-                    <div class="input-group"><label>Size</label><input type="number" value="60" oninput="Engine.state.text.size=this.value"></div>
-                    <div class="input-group"><label>Color</label><input type="color" value="#ffffff" style="height:40px" oninput="Engine.state.text.color=this.value"></div>`;
-                }
-                if(tab === 'pip') {
-                    box.innerHTML = `<h3>Picture in Picture</h3>
-                    <div class="input-group"><label>Secondary Video</label><button class="action-btn" style="width:100%" onclick="document.getElementById('upPip').click()">Upload PiP</button></div>
-                    <div class="input-group"><label>Scale</label><input type="range" min="0.1" max="1" step="0.1" value="0.3" oninput="Engine.state.pip.scale=this.value"></div>
-                    <div class="input-group"><label>Position X</label><input type="range" min="0" max="100" value="70" oninput="Engine.state.pip.x=this.value"></div>
-                    <div class="input-group"><label>Position Y</label><input type="range" min="0" max="100" value="10" oninput="Engine.state.pip.y=this.value"></div>`;
-                }
-                if(tab === 'paint') {
-                    box.innerHTML = `<h3>Paint Tools</h3>
-                    <div class="input-group"><label>Enable Painting</label><input type="checkbox" onchange="Engine.state.paint.active=this.checked"></div>
-                    <div class="input-group"><label>Brush Size</label><input type="range" min="1" max="30" value="5" oninput="Engine.state.paint.size=this.value"></div>
-                    <div class="input-group"><label>Color</label><input type="color" value="#8bc34a" style="height:40px" oninput="Engine.state.paint.color=this.value"></div>
-                    <div class="input-group"><button class="action-btn" style="width:100%; background:var(--bg-dark); border:1px solid #333" onclick="Engine.state.paint.paths=[]">Clear All</button></div>`;
-                }
+            },
+
+            toggleLoader(show) {
+                document.getElementById('loader').style.display = show ? 'flex' : 'none';
+                document.getElementById('progressFill').style.width = '0%';
+            },
+
+            log(msg) {
+                document.getElementById('logText').innerText = msg;
             }
         };
 
+        // Start
         Engine.init();
+
     </script>
 </body>
 </html>
