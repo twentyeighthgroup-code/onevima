@@ -1,42 +1,4 @@
-/*! coi-serviceworker v0.1.6 - Guido Zuidhof, licensed under MIT */
-let coisw = {
-  shouldRegister: () => navigator.serviceWorker && navigator.serviceWorker.controller === null,
-  register: () => navigator.serviceWorker.register(window.document.currentScript.src).then(r => {
-    console.log("COI Service Worker registered", r);
-    window.location.reload();
-  })
-};
-if (coisw.shouldRegister()) coisw.register();
-else {
-  const doReload = () => window.location.reload();
-  if (window.crossOriginIsolated === false) {
-     // Force reload to apply headers
-  }
-}
-
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", event => event.waitUntil(self.clients.claim()));
-
-self.addEventListener("fetch", function(event) {
-  if (event.request.cache === "only-if-cached" && event.request.mode !== "same-origin") {
-    return;
-  }
-  
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        if (response.status === 0) return response;
-
-        const newHeaders = new Headers(response.headers);
-        newHeaders.set("Cross-Origin-Embedder-Policy", "require-corp");
-        newHeaders.set("Cross-Origin-Opener-Policy", "same-origin");
-
-        return new Response(response.body, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: newHeaders,
-        });
-      })
-      .catch(e => console.error(e))
-  );
-});
+/*! coi-serviceworker v0.1.6 */
+let coisw={shouldRegister:()=>navigator.serviceWorker&&navigator.serviceWorker.controller===null,register:()=>navigator.serviceWorker.register(window.document.currentScript.src).then(r=>{console.log("COI Service Worker registered",r);window.location.reload()})};coisw.shouldRegister()&&coisw.register();
+self.addEventListener("install",()=>self.skipWaiting());self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch",function(e){if("only-if-cached"===e.request.cache&&"same-origin"!==e.request.mode)return;e.respondWith(fetch(e.request).then(r=>{if(0===r.status)return r;const t=new Headers(r.headers);return t.set("Cross-Origin-Embedder-Policy","require-corp"),t.set("Cross-Origin-Opener-Policy","same-origin"),new Response(r.body,{status:r.status,statusText:r.statusText,headers:t})}).catch(e=>console.error(e)))});
