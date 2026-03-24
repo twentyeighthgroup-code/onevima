@@ -15,155 +15,75 @@
 
     <style>
         :root {
-            /* --- BRAND IDENTITY --- */
-            /* Gradient based on your logo (Teal to Lime) */
+            /* BRAND & COLORS (UNCHANGED) */
             --brand-gradient: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
             --brand-primary: #00b09b;
             --brand-secondary: #96c93d;
             --brand-glow: 0 0 15px rgba(150, 201, 61, 0.4);
-
-            /* --- UI PALETTE --- */
-            --bg-body: #0a0b0c;     /* Deepest Black/Blue */
-            --bg-panel: #141618;    /* Panel Background */
-            --bg-header: #0f1112;
-            --border: #2a2e33;      /* Subtle Borders */
-            --text-main: #ffffff;
-            --text-muted: #6b7280;
-            
-            /* --- COMPONENTS --- */
-            --track-video: #1e293b;
-            --clip-video: #0f4c5c;  /* Dark Teal Clip */
-            --clip-audio: #1a4122;  /* Dark Green Clip */
-            --clip-selected: #2d6a4f;
-            --playhead: #96c93d;    /* Lime Playhead */
+            --bg-body: #0a0b0c; --bg-panel: #141618; --bg-header: #0f1112; --border: #2a2e33;
+            --text-main: #ffffff; --text-muted: #6b7280;
+            --clip-video: #0f4c5c; --clip-audio: #1a4122; --playhead: #96c93d;
         }
 
         * { box-sizing: border-box; outline: none; user-select: none; }
-        
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; background: var(--bg-body); }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-        body {
-            margin: 0; background: var(--bg-body); color: var(--text-main);
-            font-family: 'Manrope', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-        }
+        body { margin: 0; background: var(--bg-body); color: var(--text-main); font-family: 'Manrope', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- HEADER --- */
-        .header {
-            height: 55px; background: var(--bg-header); border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
-            z-index: 50;
-        }
-
+        /* HEADER */
+        .header { height: 55px; background: var(--bg-header); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 50; }
         .brand-wrapper { display: flex; align-items: center; gap: 12px; }
+        .logo-img { height: 32px; width: auto; }
+        .logo-fallback { width: 32px; height: 32px; border-radius: 8px; background: var(--brand-gradient); display: flex; align-items: center; justify-content: center; color: white; box-shadow: var(--brand-glow); }
+        .app-name { font-weight: 800; font-size: 1.2rem; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        /* Logo Styles */
-        .logo-img { height: 32px; width: auto; object-fit: contain; }
-        .logo-fallback {
-            width: 32px; height: 32px; border-radius: 8px;
-            background: var(--brand-gradient);
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 0.9rem;
-            box-shadow: var(--brand-glow);
-        }
-
-        .app-name {
-            font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px;
-            background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-
+        /* TABS */
         .top-menu { display: flex; gap: 20px; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-left: 40px; }
-        .menu-link { cursor: pointer; transition: 0.2s; }
+        .menu-link { cursor: pointer; transition: 0.2s; padding-bottom: 2px; border-bottom: 2px solid transparent; }
         .menu-link:hover { color: white; }
-        .menu-link.active { color: var(--brand-secondary); }
+        .menu-link.active { color: var(--brand-secondary); border-bottom-color: var(--brand-secondary); }
 
-        .btn-export {
-            background: var(--brand-gradient); border: none; padding: 8px 24px;
-            border-radius: 6px; color: white; font-weight: 700; font-size: 0.85rem;
-            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .btn-export:hover { transform: translateY(-1px); box-shadow: var(--brand-glow); }
+        .btn-export { background: var(--brand-gradient); border: none; padding: 8px 24px; border-radius: 6px; color: white; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn-export:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
 
-        /* --- MAIN LAYOUT --- */
+        /* LAYOUT */
         .workspace { flex: 1; display: grid; grid-template-columns: 320px 1fr 300px; grid-template-rows: 60% 40%; overflow: hidden; }
-
-        /* PANELS COMMON */
         .panel { background: var(--bg-panel); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .panel-head {
-            height: 36px; background: #1a1c1e; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; padding: 0 12px;
-            font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;
-            justify-content: space-between;
-        }
+        .panel-head { height: 36px; background: #1a1c1e; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; justify-content: space-between; }
 
-        /* 1. MEDIA BIN (Top Left) */
+        /* PANELS */
         .media-bin { grid-column: 1; grid-row: 1; border-right: none; border-bottom: none; }
         .file-grid { padding: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; overflow-y: auto; }
-        
-        .file-card {
-            background: #0f1112; border: 1px solid var(--border); border-radius: 6px;
-            overflow: hidden; cursor: grab; transition: 0.2s;
-        }
-        .file-card:hover { border-color: var(--brand-primary); }
+        .file-card { background: #0f1112; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; cursor: grab; }
         .file-thumb { height: 70px; background: #000; display: flex; align-items: center; justify-content: center; color: #333; }
-        .file-info { padding: 8px; font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-info { padding: 8px; font-size: 0.7rem; white-space: nowrap; overflow: hidden; }
 
-        /* 2. VIEWER (Top Center) */
         .viewer { grid-column: 2; grid-row: 1; background: #000; border-bottom: none; align-items: center; justify-content: center; position: relative; }
         canvas { max-width: 90%; max-height: 85%; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
-        
-        .viewer-overlay {
-            position: absolute; bottom: 20px;
-            background: rgba(20, 22, 24, 0.8); backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 8px 16px; border-radius: 30px;
-            display: flex; gap: 20px; align-items: center;
-        }
-        .tc-display { font-family: 'JetBrains Mono'; font-size: 0.9rem; color: var(--brand-secondary); font-weight: 600; }
-        .v-btn { color: white; cursor: pointer; transition: 0.2s; font-size: 1rem; }
-        .v-btn:hover { color: var(--brand-primary); }
+        .viewer-overlay { position: absolute; bottom: 20px; background: rgba(20, 22, 24, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 30px; display: flex; gap: 20px; align-items: center; }
+        .v-btn { color: white; cursor: pointer; } .v-btn:hover { color: var(--brand-primary); }
 
-        /* 3. INSPECTOR (Top Right) */
         .inspector { grid-column: 3; grid-row: 1; border-left: none; border-bottom: none; }
         .prop-container { padding: 20px; overflow-y: auto; }
-        
         .prop-item { margin-bottom: 20px; }
         .prop-header { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; }
-        .kf-diamond { width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid #555; cursor: pointer; }
-        .kf-diamond.active { background: var(--brand-secondary); border-color: var(--brand-secondary); box-shadow: 0 0 5px var(--brand-secondary); }
+        input[type="range"] { width: 100%; height: 4px; background: #333; border-radius: 2px; accent-color: var(--brand-secondary); cursor: pointer; }
+        input[type="number"] { background: #0a0b0c; border: 1px solid var(--border); color: white; padding: 4px; border-radius: 4px; width: 60px; }
 
-        input[type="range"] {
-            width: 100%; height: 4px; background: #333; border-radius: 2px;
-            accent-color: var(--brand-secondary); cursor: pointer;
-        }
-        input[type="number"] {
-            background: #0a0b0c; border: 1px solid var(--border); color: white;
-            padding: 4px 8px; border-radius: 4px; font-family: inherit; font-size: 0.8rem; width: 60px;
-        }
-
-        /* 4. TIMELINE (Bottom) */
+        /* TIMELINE */
         .timeline { grid-column: 1 / span 3; grid-row: 2; border-top: 1px solid var(--border); display: flex; flex-direction: column; }
-        
-        .tl-toolbar {
-            height: 40px; background: #181a1c; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; padding: 0 16px; gap: 20px;
-        }
-        .tool-icon { font-size: 0.9rem; color: var(--text-muted); cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
-        .tool-icon:hover { color: white; }
+        .tl-toolbar { height: 40px; background: #181a1c; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; gap: 20px; }
+        .tool-icon { font-size: 0.9rem; color: var(--text-muted); cursor: pointer; } 
         .tool-icon.active { color: var(--brand-primary); }
 
         .tl-body { flex: 1; display: flex; position: relative; overflow: hidden; }
-        
         .track-headers { width: 120px; background: #16181a; border-right: 1px solid var(--border); flex-shrink: 0; z-index: 20; }
         .track-head { height: 60px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding-left: 15px; font-size: 0.75rem; color: #888; font-weight: 600; }
-
+        
         .track-content { flex: 1; background: #0f1011; position: relative; overflow: auto; }
         .track-lane { height: 60px; border-bottom: 1px solid #222; position: relative; min-width: 100%; }
 
-        /* CLIPS */
         .clip {
             position: absolute; top: 4px; height: 52px;
             background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 100%), var(--clip-video);
@@ -171,23 +91,14 @@
             cursor: pointer; overflow: hidden; display: flex; flex-direction: column; justify-content: center;
         }
         .clip.selected { border: 1px solid var(--brand-secondary); box-shadow: 0 0 0 1px var(--brand-secondary); z-index: 10; }
-        .clip-label { font-size: 0.7rem; padding: 0 8px; color: rgba(255,255,255,0.9); text-shadow: 0 1px 2px black; pointer-events: none; }
+        .clip-label { font-size: 0.7rem; padding: 0 8px; color: rgba(255,255,255,0.9); pointer-events: none; }
 
-        /* PLAYHEAD & RULER */
         .ruler { height: 24px; background: #16181a; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 30; }
         .playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--playhead); pointer-events: none; z-index: 100; }
-        .playhead-marker { 
-            width: 11px; height: 11px; background: var(--playhead); transform: rotate(45deg);
-            position: absolute; top: -5px; left: -5px; border: 2px solid #0f1011; box-shadow: 0 0 5px var(--playhead);
-        }
+        .playhead-marker { width: 11px; height: 11px; background: var(--playhead); transform: rotate(45deg); position: absolute; top: -5px; left: -5px; border: 2px solid #0f1011; }
 
-        /* UTILS */
-        .hidden { display: none; }
-        .loader-overlay {
-            position: fixed; inset: 0; background: #0a0b0c; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .loading-bar { width: 200px; height: 3px; background: #222; margin-top: 20px; overflow: hidden; border-radius: 2px; }
+        .loader-overlay { position: fixed; inset: 0; background: #0a0b0c; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .loading-bar { width: 200px; height: 3px; background: #222; margin-top: 20px; overflow: hidden; }
         .loading-fill { height: 100%; width: 0%; background: var(--brand-gradient); transition: width 0.3s; }
         
         input[type="file"] { display: none; }
@@ -195,61 +106,43 @@
 </head>
 <body>
 
-    <!-- LOADING SCREEN -->
     <div class="loader-overlay" id="loader">
-        <!-- Logo construction -->
-        <div style="width: 60px; height: 60px; border-radius: 14px; background: var(--brand-gradient); display: grid; place-items: center; font-size: 1.5rem; color: white; box-shadow: var(--brand-glow);">
-            <i class="fas fa-video"></i>
-        </div>
-        <h1 style="font-weight: 800; margin-top: 20px; letter-spacing: -1px;">ONEVIMA <span style="font-weight: 300; color: #888;">Professional editor</span></h1>
+        <div style="width: 60px; height: 60px; border-radius: 14px; background: var(--brand-gradient); display: grid; place-items: center; font-size: 1.5rem; color: white; box-shadow: var(--brand-glow);"><i class="fas fa-video"></i></div>
+        <h1 style="font-weight: 800; margin-top: 20px;">ONEVIMA <span style="font-weight: 300; color: #888;">Professionaleditor</span></h1>
         <div class="loading-bar"><div class="loading-fill" id="loadFill"></div></div>
-        <div style="margin-top: 10px; font-size: 0.7rem; color: #555; font-family: 'JetBrains Mono'">INITIALIZING CORE ENGINE...</div>
+        <div style="margin-top: 10px; font-size: 0.7rem; color: #555; font-family: 'JetBrains Mono'" id="loadText">INITIALIZING...</div>
     </div>
 
-    <!-- HEADER -->
     <header class="header">
         <div class="brand-wrapper">
-            <!-- LOGO HANDLING -->
             <img src="logo.png" class="logo-img" onerror="this.style.display='none'; document.getElementById('fbLogo').style.display='flex'">
-            <div id="fbLogo" class="logo-fallback hidden"><i class="fas fa-film"></i></div>
-            
+            <div id="fbLogo" class="logo-fallback" style="display:none"><i class="fas fa-film"></i></div>
             <div class="app-name">ONEVIMA</div>
             
             <div class="top-menu">
-                <div class="menu-link active">Edit</div>
-                <div class="menu-link">Color</div>
-                <div class="menu-link">Audio</div>
-                <div class="menu-link">Effects</div>
+                <div class="menu-link active" onclick="UI.setMode('edit', this)">Edit</div>
+                <div class="menu-link" onclick="UI.setMode('color', this)">Color</div>
+                <div class="menu-link" onclick="UI.setMode('audio', this)">Audio</div>
+                <div class="menu-link" onclick="UI.setMode('fx', this)">Effects</div>
             </div>
         </div>
-        
-        <div style="display: flex; gap: 15px; align-items: center;">
-             <div style="font-size: 0.7rem; color: #555;">Professional editor</div>
-             <button class="btn-export" onclick="Engine.render()">
-                <i class="fas fa-bolt"></i> EXPORT
-            </button>
-        </div>
+        <button class="btn-export" id="exportBtn" onclick="Engine.export()">
+            <i class="fas fa-bolt"></i> EXPORT
+        </button>
     </header>
 
-    <!-- WORKSPACE -->
     <div class="workspace">
-        
-        <!-- 1. MEDIA BIN -->
+        <!-- MEDIA BIN -->
         <div class="panel media-bin">
-            <div class="panel-head">
-                <span>Media Pool</span>
-                <i class="fas fa-plus" style="cursor: pointer; color: var(--brand-primary);" onclick="document.getElementById('upl').click()"></i>
-            </div>
+            <div class="panel-head"><span>Media Pool</span><i class="fas fa-plus" style="cursor: pointer; color: var(--brand-primary);" onclick="document.getElementById('upl').click()"></i></div>
             <div class="file-grid" id="bin">
-                <!-- Drop Zone -->
                 <div style="grid-column: span 2; border: 2px dashed #222; border-radius: 6px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #444; font-size: 0.75rem; cursor: pointer;" onclick="document.getElementById('upl').click()">
-                    <i class="fas fa-cloud-upload-alt" style="font-size: 1.2rem; margin-bottom: 5px;"></i>
-                    Import Media
+                    <i class="fas fa-cloud-upload-alt" style="margin-bottom: 5px;"></i> Import Media
                 </div>
             </div>
         </div>
 
-        <!-- 2. VIEWER -->
+        <!-- VIEWER -->
         <div class="panel viewer">
             <canvas id="viewerCanvas"></canvas>
             <div class="viewer-overlay">
@@ -259,46 +152,34 @@
             </div>
         </div>
 
-        <!-- 3. INSPECTOR -->
+        <!-- INSPECTOR -->
         <div class="panel inspector" id="inspectorPanel">
-            <div class="panel-head">Inspector</div>
-            <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#444; font-size:0.8rem;">
-                Select a clip
+            <div class="panel-head" id="inspTitle">Edit</div>
+            <div class="prop-container" id="inspContent">
+                <div style="text-align:center; color:#444; font-size:0.8rem;">Select a clip</div>
             </div>
         </div>
 
-        <!-- 4. TIMELINE -->
+        <!-- TIMELINE -->
         <div class="panel timeline">
             <div class="tl-toolbar">
-                <div class="tool-icon active"><i class="fas fa-mouse-pointer"></i> Select</div>
-                <div class="tool-icon" onclick="Timeline.split()"><i class="fas fa-cut"></i> Blade</div>
-                <div class="tool-icon active"><i class="fas fa-magnet"></i> Snap</div>
-                <div style="flex:1"></div>
+                <div class="tool-icon active"><i class="fas fa-mouse-pointer"></i></div>
                 <div class="tool-icon" onclick="Timeline.zoom(-10)"><i class="fas fa-minus"></i></div>
                 <input type="range" style="width: 100px;" min="10" max="200" value="20" oninput="Timeline.setZoom(this.value)">
                 <div class="tool-icon" onclick="Timeline.zoom(10)"><i class="fas fa-plus"></i></div>
             </div>
             <div class="tl-body">
-                <div class="track-headers" id="trackHeaders">
-                    <!-- JS Generated -->
-                </div>
+                <div class="track-headers" id="trackHeaders"></div>
                 <div class="track-content" id="trackContent" onclick="Transport.scrub(event)">
                     <div class="ruler"></div>
-                    <div class="playhead" id="ph">
-                        <div class="playhead-marker"></div>
-                    </div>
-                    <div id="tracksLayer">
-                        <!-- JS Generated -->
-                    </div>
+                    <div class="playhead" id="ph"><div class="playhead-marker"></div></div>
+                    <div id="tracksLayer"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- UTILS -->
     <input type="file" id="upl" multiple accept="video/*,image/*,audio/*">
-    <!-- Hidden Videos -->
-    <div id="videoCache" style="display:none;"></div>
 
     <script>
         const { createFFmpeg, fetchFile } = FFmpeg;
@@ -306,42 +187,92 @@
 
         // --- CORE STATE ---
         const Project = {
-            media: {},      // { id: { file, url, duration, type, el } }
+            media: {},
             tracks: [
                 { id: 1, type: 'video', name: 'V1', clips: [] },
                 { id: 2, type: 'video', name: 'V2', clips: [] },
-                { id: 3, type: 'audio', name: 'A1', clips: [] }
             ],
             duration: 60,
-            currentTime: 0,
             zoom: 20, // px per sec
-            playing: false,
+            mode: 'edit',
             selection: null, // { trackIdx, clipId }
             uid: 0
         };
 
-        const FPS = 30;
+        const Playback = {
+            active: false,
+            startTime: 0,
+            startOffset: 0
+        };
+
+        // --- DRAG MANAGER ---
+        const Drag = {
+            active: false,
+            clipId: null,
+            trackIdx: null,
+            startX: 0,
+            initialStart: 0,
+            
+            start(e, tIdx, cId, startVal) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.active = true;
+                this.clipId = cId;
+                this.trackIdx = tIdx;
+                this.startX = e.clientX;
+                this.initialStart = startVal;
+                document.body.style.cursor = 'grabbing';
+            },
+            
+            move(e) {
+                if (!this.active) return;
+                const deltaPx = e.clientX - this.startX;
+                const deltaSec = deltaPx / Project.zoom;
+                
+                const track = Project.tracks[this.trackIdx];
+                const clip = track.clips.find(c => c.id === this.clipId);
+                
+                let newStart = this.initialStart + deltaSec;
+                if (newStart < 0) newStart = 0;
+                
+                clip.start = newStart;
+                
+                // Optimized DOM update (don't re-render whole timeline)
+                const el = document.getElementById(this.clipId);
+                if (el) el.style.left = (newStart * Project.zoom) + 'px';
+            },
+            
+            end() {
+                if (!this.active) return;
+                this.active = false;
+                document.body.style.cursor = 'default';
+                Timeline.render(); // Snap visuals
+                UI.updateInspector();
+            }
+        };
+
+        window.addEventListener('mousemove', e => Drag.move(e));
+        window.addEventListener('mouseup', () => Drag.end());
 
         // --- APP CONTROLLER ---
         const App = {
             async init() {
-                // UI Init
                 Timeline.render();
                 
-                // Load FFmpeg simulation
+                // Load FFmpeg
                 const bar = document.getElementById('loadFill');
-                bar.style.width = '30%';
+                const txt = document.getElementById('loadText');
                 
                 try {
+                    bar.style.width = '30%';
                     await ffmpeg.load();
                     bar.style.width = '100%';
-                    setTimeout(() => document.getElementById('loader').style.display = 'none', 800);
+                    setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
                 } catch(e) {
-                    console.error(e);
-                    alert("Core Error. Please use a Desktop Browser.");
+                    txt.innerText = "ERROR: BROWSER NOT SUPPORTED";
+                    alert("Please use Chrome Desktop.");
                 }
 
-                // Start Loop
                 requestAnimationFrame(Render.loop);
             },
 
@@ -349,40 +280,23 @@
                 Array.from(files).forEach(f => {
                     const id = 'm_' + (++Project.uid);
                     const url = URL.createObjectURL(f);
-                    const type = f.type.startsWith('image') ? 'image' : (f.type.startsWith('audio') ? 'audio' : 'video');
-                    
-                    if(type === 'video') {
-                        const v = document.createElement('video');
-                        v.src = url;
-                        v.onloadedmetadata = () => {
-                            Project.media[id] = { id, file: f, url, duration: v.duration, type, el: v };
-                            UI.addToBin(Project.media[id]);
-                        };
-                    } else {
-                        const img = new Image();
-                        img.src = url;
-                        img.onload = () => {
-                            Project.media[id] = { id, file: f, url, duration: 5, type, el: img };
-                            UI.addToBin(Project.media[id]);
-                        }
-                    }
+                    const v = document.createElement('video');
+                    v.src = url;
+                    v.onloadedmetadata = () => {
+                        Project.media[id] = { id, file: f, url, duration: v.duration, el: v };
+                        UI.addToBin(Project.media[id]);
+                    };
                 });
             },
 
             addClipToTrack(mediaId, trackIdx, time) {
                 const media = Project.media[mediaId];
-                if(Project.tracks[trackIdx].type === 'audio' && media.type !== 'audio') return;
-
                 const clip = {
-                    id: 'c_' + (++Project.uid),
-                    mediaId,
-                    start: time,
-                    duration: media.duration,
-                    offset: 0,
-                    // Properties
-                    x: 0, y: 0, scale: 1, opacity: 1
+                    id: 'c_' + (++Project.uid), mediaId, start: time, duration: media.duration, offset: 0,
+                    x: 0, y: 0, scale: 1, opacity: 1, 
+                    brightness: 1, contrast: 1, saturate: 1, 
+                    volume: 1, blur: 0, sepia: 0
                 };
-                
                 Project.tracks[trackIdx].clips.push(clip);
                 Timeline.render();
             }
@@ -397,121 +311,125 @@
                 content.innerHTML = '';
 
                 Project.tracks.forEach((track, idx) => {
-                    // Header
                     const h = document.createElement('div');
                     h.className = 'track-head';
                     h.innerHTML = `<span>${track.name}</span>`;
                     headers.appendChild(h);
 
-                    // Lane
                     const lane = document.createElement('div');
                     lane.className = 'track-lane';
                     lane.style.width = (Project.duration * Project.zoom) + 'px';
                     
-                    // Drag Drop
                     lane.ondragover = e => e.preventDefault();
                     lane.ondrop = e => {
                         e.preventDefault();
                         const mid = e.dataTransfer.getData('mid');
-                        const rect = lane.getBoundingClientRect();
-                        const x = e.clientX - rect.left + document.getElementById('trackContent').scrollLeft;
-                        App.addClipToTrack(mid, idx, x / Project.zoom);
+                        if(mid) {
+                            const rect = lane.getBoundingClientRect();
+                            const x = e.clientX - rect.left + document.getElementById('trackContent').scrollLeft;
+                            App.addClipToTrack(mid, idx, x / Project.zoom);
+                        }
                     };
 
-                    // Clips
                     track.clips.forEach(clip => {
                         const el = document.createElement('div');
+                        el.id = clip.id;
                         el.className = 'clip';
                         if(Project.selection && Project.selection.clipId === clip.id) el.classList.add('selected');
                         
-                        // Style
                         el.style.left = (clip.start * Project.zoom) + 'px';
                         el.style.width = (clip.duration * Project.zoom) + 'px';
                         
-                        // Content
                         const m = Project.media[clip.mediaId];
                         el.innerHTML = `<div class="clip-label">${m.file.name}</div>`;
                         
-                        // Select
-                        el.onclick = (e) => {
-                            e.stopPropagation();
+                        // Drag handlers
+                        el.onmousedown = (e) => {
                             UI.selectClip(idx, clip.id);
+                            Drag.start(e, idx, clip.id, clip.start);
                         };
 
                         lane.appendChild(el);
                     });
-
                     content.appendChild(lane);
                 });
             },
-
             setZoom(v) { Project.zoom = parseFloat(v); this.render(); },
-            zoom(d) { Project.zoom = Math.max(10, Project.zoom + d); this.render(); },
-            
-            split() {
-                if(!Project.selection) return;
-                const {trackIdx, clipId} = Project.selection;
-                const track = Project.tracks[trackIdx];
-                const clip = track.clips.find(c => c.id === clipId);
-                const t = Project.currentTime;
-                
-                if(t > clip.start && t < clip.start + clip.duration) {
-                    const cut = t - clip.start;
-                    const right = { ...clip, id: 'c_'+(++Project.uid), start: t, duration: clip.duration - cut, offset: clip.offset + cut };
-                    clip.duration = cut;
-                    track.clips.push(right);
-                    Timeline.render();
+            zoom(d) { Project.zoom = Math.max(10, Project.zoom + d); this.render(); }
+        };
+
+        // --- RENDERER (SMOOTH PLAYBACK) ---
+        const Transport = {
+            time: 0,
+            toggle() {
+                if(Playback.active) {
+                    Playback.active = false;
+                    document.getElementById('playIcon').className = 'fas fa-play v-btn';
+                } else {
+                    Playback.active = true;
+                    Playback.startTime = performance.now();
+                    Playback.startOffset = Transport.time;
+                    document.getElementById('playIcon').className = 'fas fa-pause v-btn';
                 }
+            },
+            seek(t) { Transport.time = t; Playback.active = false; document.getElementById('playIcon').className = 'fas fa-play v-btn'; },
+            scrub(e) {
+                const r = document.getElementById('trackContent').getBoundingClientRect();
+                const x = e.clientX - r.left + document.getElementById('trackContent').scrollLeft;
+                Transport.time = Math.max(0, x / Project.zoom);
             }
         };
 
-        // --- RENDERER ---
         const Render = {
             cvs: document.getElementById('viewerCanvas'),
             ctx: document.getElementById('viewerCanvas').getContext('2d'),
 
             loop() {
+                // Time update logic
+                if (Playback.active) {
+                    const now = performance.now();
+                    const delta = (now - Playback.startTime) / 1000;
+                    Transport.time = Playback.startOffset + delta;
+                    if (Transport.time >= Project.duration) {
+                        Transport.time = 0;
+                        Playback.active = false;
+                        document.getElementById('playIcon').className = 'fas fa-play v-btn';
+                    }
+                }
+
+                // UI Updates
+                const ph = document.getElementById('ph');
+                if (ph) ph.style.left = (Transport.time * Project.zoom) + 'px';
+                
+                const d = new Date(Transport.time * 1000);
+                document.getElementById('tc').innerText = d.toISOString().substr(11, 11);
+
+                // Draw Frame
                 const ctx = Render.ctx;
                 const w = Render.cvs.width = 1280;
                 const h = Render.cvs.height = 720;
-
                 ctx.fillStyle = '#000'; ctx.fillRect(0,0,w,h);
 
-                if(Project.playing) {
-                    Project.currentTime += 1/FPS;
-                    if(Project.currentTime >= Project.duration) Project.playing = false;
-                    
-                    // UI Update
-                    const ph = document.getElementById('ph');
-                    if(ph) ph.style.left = (Project.currentTime * Project.zoom) + 'px';
-                    
-                    const d = new Date(Project.currentTime * 1000);
-                    document.getElementById('tc').innerText = d.toISOString().substr(11, 11);
-                }
-
-                // Render Clips
                 Project.tracks.forEach(track => {
-                    if(track.type !== 'video') return;
                     track.clips.forEach(clip => {
-                        if(Project.currentTime >= clip.start && Project.currentTime < clip.start + clip.duration) {
+                        if(Transport.time >= clip.start && Transport.time < clip.start + clip.duration) {
                             const media = Project.media[clip.mediaId];
                             
-                            // Sync
-                            const time = (Project.currentTime - clip.start) + clip.offset;
-                            if(media.type === 'video') {
-                                if(Math.abs(media.el.currentTime - time) > 0.3) media.el.currentTime = time;
-                            }
+                            // Sync Logic
+                            const localTime = (Transport.time - clip.start) + clip.offset;
+                            if(Math.abs(media.el.currentTime - localTime) > 0.3) media.el.currentTime = localTime;
 
-                            // Draw
+                            // Apply Effects (Visual)
                             ctx.save();
                             ctx.globalAlpha = clip.opacity;
+                            ctx.filter = `brightness(${clip.brightness}) contrast(${clip.contrast}) saturate(${clip.saturate}) sepia(${clip.sepia}) blur(${clip.blur}px)`;
+                            
                             ctx.translate(w/2 + clip.x, h/2 + clip.y);
                             ctx.scale(clip.scale, clip.scale);
                             
-                            const aspect = (media.el.videoWidth || media.el.width) / (media.el.videoHeight || media.el.height);
+                            const aspect = (media.el.videoWidth || 640) / (media.el.videoHeight || 360);
                             const dw = w; const dh = w/aspect;
                             ctx.drawImage(media.el, -dw/2, -dh/2, dw, dh);
-                            
                             ctx.restore();
                         }
                     });
@@ -521,90 +439,185 @@
             }
         };
 
-        // --- UI & TOOLS ---
+        // --- UI MANAGER (TABS & INSPECTOR) ---
         const UI = {
+            setMode(mode, el) {
+                Project.mode = mode;
+                document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
+                if(el) el.classList.add('active');
+                
+                document.getElementById('inspTitle').innerText = mode.charAt(0).toUpperCase() + mode.slice(1);
+                this.updateInspector();
+            },
+
             addToBin(m) {
                 const el = document.createElement('div');
                 el.className = 'file-card';
                 el.draggable = true;
-                el.innerHTML = `
-                    <div class="file-thumb">${m.type=='video'?'🎬':(m.type=='audio'?'🔊':'🖼️')}</div>
-                    <div class="file-info">${m.file.name}</div>
-                `;
+                el.innerHTML = `<div class="file-thumb">🎬</div><div class="file-info">${m.file.name}</div>`;
                 el.ondragstart = e => e.dataTransfer.setData('mid', m.id);
                 document.getElementById('bin').appendChild(el);
             },
 
             selectClip(ti, ci) {
                 Project.selection = { trackIdx: ti, clipId: ci };
-                Timeline.render();
-                
-                const clip = Project.tracks[ti].clips.find(c => c.id === ci);
-                const p = document.getElementById('inspectorPanel');
-                
-                p.innerHTML = `
-                    <div class="panel-head">Video Properties</div>
-                    <div class="prop-container">
-                        <div class="prop-item">
-                            <div class="prop-header"><span>Scale</span><div class="kf-diamond"></div></div>
-                            <div style="display:flex; gap:10px">
-                                <input type="range" min="0" max="3" step="0.1" value="${clip.scale}" oninput="UI.upd('scale', this.value)">
-                                <input type="number" value="${clip.scale}" readonly>
-                            </div>
-                        </div>
-                        <div class="prop-item">
-                            <div class="prop-header"><span>Opacity</span><div class="kf-diamond"></div></div>
-                            <div style="display:flex; gap:10px">
-                                <input type="range" min="0" max="1" step="0.1" value="${clip.opacity}" oninput="UI.upd('opacity', this.value)">
-                                <input type="number" value="${clip.opacity}" readonly>
-                            </div>
-                        </div>
-                         <div class="prop-item">
-                            <div class="prop-header"><span>Position X</span><div class="kf-diamond"></div></div>
-                            <input type="range" min="-500" max="500" value="${clip.x}" oninput="UI.upd('x', this.value)">
-                        </div>
-                         <div class="prop-item">
-                            <div class="prop-header"><span>Position Y</span><div class="kf-diamond"></div></div>
-                            <input type="range" min="-500" max="500" value="${clip.y}" oninput="UI.upd('y', this.value)">
-                        </div>
-                    </div>
-                `;
+                // Don't re-render timeline completely to allow smooth dragging
+                document.querySelectorAll('.clip').forEach(c => c.classList.remove('selected'));
+                const el = document.getElementById(ci);
+                if(el) el.classList.add('selected');
+                this.updateInspector();
             },
-            
+
+            updateInspector() {
+                const p = document.getElementById('inspContent');
+                if(!Project.selection) {
+                    p.innerHTML = `<div style="text-align:center; color:#444; font-size:0.8rem;">Select a clip</div>`;
+                    return;
+                }
+
+                const {trackIdx, clipId} = Project.selection;
+                const clip = Project.tracks[trackIdx].clips.find(c => c.id === clipId);
+
+                let html = '';
+                
+                if (Project.mode === 'edit') {
+                    html += this.renderSlider('Scale', 'scale', 0, 3, clip.scale);
+                    html += this.renderSlider('Opacity', 'opacity', 0, 1, clip.opacity);
+                    html += this.renderSlider('Pos X', 'x', -500, 500, clip.x);
+                    html += this.renderSlider('Pos Y', 'y', -500, 500, clip.y);
+                } else if (Project.mode === 'color') {
+                    html += this.renderSlider('Brightness', 'brightness', 0, 2, clip.brightness);
+                    html += this.renderSlider('Contrast', 'contrast', 0, 2, clip.contrast);
+                    html += this.renderSlider('Saturation', 'saturate', 0, 3, clip.saturate);
+                } else if (Project.mode === 'audio') {
+                    html += this.renderSlider('Volume', 'volume', 0, 2, clip.volume);
+                } else if (Project.mode === 'fx') {
+                    html += this.renderSlider('Blur', 'blur', 0, 20, clip.blur);
+                    html += this.renderSlider('Sepia', 'sepia', 0, 1, clip.sepia);
+                }
+
+                p.innerHTML = html;
+            },
+
+            renderSlider(label, prop, min, max, val) {
+                return `
+                <div class="prop-item">
+                    <div class="prop-header"><span>${label}</span></div>
+                    <div style="display:flex; gap:10px">
+                        <input type="range" min="${min}" max="${max}" step="0.05" value="${val}" oninput="UI.upd('${prop}', this.value)">
+                        <input type="number" value="${Number(val).toFixed(2)}" readonly>
+                    </div>
+                </div>`;
+            },
+
             upd(prop, val) {
                 const {trackIdx, clipId} = Project.selection;
                 const clip = Project.tracks[trackIdx].clips.find(c => c.id === clipId);
                 clip[prop] = parseFloat(val);
+                this.updateInspector(); // Refresh numbers
             }
         };
 
-        const Transport = {
-            toggle() { 
-                Project.playing = !Project.playing; 
-                document.getElementById('playIcon').className = Project.playing ? 'fas fa-pause v-btn' : 'fas fa-play v-btn';
-            },
-            seek(t) { Project.currentTime = t; },
-            scrub(e) {
-                const r = document.getElementById('trackContent').getBoundingClientRect();
-                const x = e.clientX - r.left + document.getElementById('trackContent').scrollLeft;
-                Project.currentTime = Math.max(0, x / Project.zoom);
-            }
-        };
-
+        // --- EXPORT ENGINE (FUNCTIONAL) ---
         const Engine = {
-            async render() {
-                // Mockup Export - Real one would use FFmpeg complex filters
-                const btn = document.querySelector('.btn-export');
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> BUILDING...';
-                setTimeout(() => {
-                     btn.innerHTML = '<i class="fas fa-check"></i> DONE!';
-                     setTimeout(() => btn.innerHTML = '<i class="fas fa-bolt"></i> EXPORT', 2000);
-                     alert("Export sequence initiated via FFmpeg WASM engine.");
-                }, 2000);
-            }
-        }
+            async export() {
+                const btn = document.getElementById('exportBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> PREPARING';
+                
+                // Pause playback
+                Playback.active = false;
+                
+                try {
+                    if(!ffmpeg.isLoaded()) await ffmpeg.load();
 
-        // --- INIT ---
+                    // 1. Write files
+                    let inputs = [];
+                    let filterChains = [];
+                    let streams = [];
+                    let mediaMap = {};
+
+                    // Load unique media files
+                    for(const mid in Project.media) {
+                         const m = Project.media[mid];
+                         const fname = `input_${mid}.mp4`; // Simplify ext
+                         ffmpeg.FS('writeFile', fname, await fetchFile(m.file));
+                         inputs.push('-i', fname);
+                         mediaMap[mid] = inputs.length - 1; // Index
+                    }
+
+                    // 2. Build Filter Complex
+                    // Base Canvas
+                    filterChains.push(`color=c=black:s=1280x720:d=${Project.duration}[base]`);
+                    let lastStream = '[base]';
+
+                    // Iterate tracks and clips
+                    let clipIdx = 0;
+                    
+                    Project.tracks.forEach(track => {
+                        track.clips.forEach(clip => {
+                            const inputIdx = mediaMap[clip.mediaId];
+                            const label = `v${clipIdx}`;
+                            
+                            // Filters: Scale -> Effects -> Opacity -> Delay
+                            // Trim logic is complex in one line, simplified here:
+                            // We assume source plays from 0 for demo stability.
+                            // Real NLE needs trim=${clip.offset}:${clip.duration}
+                            
+                            const scale = `[${inputIdx}:v]scale=iw*${clip.scale}:-1,format=rgba`;
+                            const effects = `eq=brightness=${clip.brightness}:contrast=${clip.contrast}:saturation=${clip.saturate}`;
+                            // FFmpeg doesn't have blur/sepia in basic build often, stick to eq
+                            
+                            // PTS shift for timeline position
+                            const pts = `setpts=PTS-STARTPTS+${clip.start}/TB`;
+                            
+                            filterChains.push(`${scale},${effects},${pts}[${label}_pre]`);
+                            
+                            // Overlay
+                            // x and y
+                            const x = `(W-w)/2+${clip.x}`;
+                            const y = `(H-h)/2+${clip.y}`;
+                            const enable = `enable='between(t,${clip.start},${clip.start+clip.duration})'`;
+                            
+                            // Add alpha opacity via colorchannelmixer if needed, simple overlay here
+                            filterChains.push(`${lastStream}[${label}_pre]overlay=x=${x}:y=${y}:${enable}[tmp${clipIdx}]`);
+                            
+                            lastStream = `[tmp${clipIdx}]`;
+                            clipIdx++;
+                        });
+                    });
+
+                    // 3. Encode
+                    const complex = filterChains.join(';');
+                    const cmd = [
+                        ...inputs,
+                        '-filter_complex', complex,
+                        '-map', lastStream,
+                        '-c:v', 'libx264', '-preset', 'ultrafast', '-shortest',
+                        'out.mp4'
+                    ];
+
+                    btn.innerHTML = '<i class="fas fa-cog fa-spin"></i> RENDERING';
+                    
+                    await ffmpeg.run(...cmd);
+
+                    const d = ffmpeg.FS('readFile', 'out.mp4');
+                    const url = URL.createObjectURL(new Blob([d.buffer], {type: 'video/mp4'}));
+                    const a = document.createElement('a'); a.href=url; a.download='onevima_export.mp4'; a.click();
+                    
+                    btn.innerHTML = '<i class="fas fa-check"></i> DONE';
+                    setTimeout(() => { btn.innerHTML = '<i class="fas fa-bolt"></i> EXPORT'; btn.disabled = false; }, 2000);
+
+                } catch(e) {
+                    console.error(e);
+                    alert("Export Error. Check Console.");
+                    btn.innerHTML = 'ERROR';
+                    btn.disabled = false;
+                }
+            }
+        };
+
+        // Init
         document.getElementById('upl').onchange = e => App.addMedia(e.target.files);
         App.init();
 
